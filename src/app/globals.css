@@ -82,7 +82,18 @@ body {
   * {
     @apply border-border;
   }
+  html, body {
+    @apply w-full h-full;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+  .container {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
