@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Home, Star, Users } from "lucide-react";
+import Image from "next/image";
 
 import { NavCategories } from "@/components/nav-categories";
 import { NavUser } from "@/components/nav-user";
@@ -11,6 +12,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 // This is sample data.
@@ -40,18 +42,42 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state, toggleSidebar } = useSidebar();
+
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <Sidebar collapsible="icon" {...props}>
-        <SidebarHeader></SidebarHeader>
-        <SidebarContent>
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <button onClick={toggleSidebar} className="p-2">
+          {state === "expanded" ? "Collapse" : "Expand"}
+        </button>
+      </SidebarHeader>
+      <SidebarContent>
+        {state === "expanded" ? (
           <NavCategories categories={data.categories} />
-        </SidebarContent>
-        <SidebarFooter>
+        ) : (
+          <div className="flex flex-col items-center">
+            {data.categories.map((category) => (
+              <category.icon key={category.name} className="h-6 w-6 my-2" />
+            ))}
+          </div>
+        )}
+      </SidebarContent>
+      <SidebarFooter>
+        {state === "expanded" ? (
           <NavUser user={data.user} />
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-    </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <Image
+              src={data.user.avatar}
+              alt={data.user.name}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+          </div>
+        )}
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

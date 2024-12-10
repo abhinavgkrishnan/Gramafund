@@ -1,0 +1,15 @@
+.sidebar {
+  transition: width 0.3s ease;
+}
+
+.sidebar.collapsible {
+  width: 240px;
+}
+
+.sidebar.collapsible.collapsed {
+  width: 60px;
+}
+
+.sidebar.collapsible.expanded {
+  width: 240px;
+}
