@@ -1,101 +1,70 @@
-import Image from "next/image";
+import { PostCard } from "@/components/post-card";
+
+type Post = {
+  id: number;
+  type: "Project" | "Comment" | "Reaction" | "Funding";
+  title: string;
+  description: string;
+  detail: string;
+  author: string;
+  date: string;
+  karma: number;
+  comments: number;
+  tags: string[];
+};
+
+// Sample post data
+const posts: Post[] = [
+  {
+    id: 1,
+    type: "Project",
+    title: "AI Alignment Research Initiative",
+    description:
+      "A collaborative project to develop frameworks for ensuring AI systems remain aligned with human values",
+    detail:
+      "Our team is working on developing formal verification methods for neural networks to ensure they maintain specified behavioral constraints during training and deployment. We're focusing on three key areas: 1) Value learning from human feedback 2) Robustness to distribution shift 3) Interpretability of decision-making processes. Initial results show promising directions for constraining AI systems while maintaining performance.",
+    author: "Sarah Chen",
+    date: "2024-01-10",
+    karma: 342,
+    comments: 56,
+    tags: ["AI Safety", "Research", "Technical"],
+  },
+  {
+    id: 2,
+    type: "Funding",
+    title: "Global Health Intervention Scaling",
+    description:
+      "Funding proposal to scale proven malaria prevention methods in high-risk regions",
+    detail:
+      "Seeking $2.5M to expand distribution of long-lasting insecticidal nets (LLINs) in sub-Saharan Africa. Previous pilot showed 60% reduction in malaria cases with $4.30 cost per DALY avoided. Proposal includes: Implementation plan, cost-effectiveness analysis, risk assessment, and monitoring framework. Partnership with local health authorities already established.",
+    author: "Michael Okonjo",
+    date: "2024-01-09",
+    karma: 275,
+    comments: 43,
+    tags: ["Global Health", "Funding", "Impact"],
+  },
+  {
+    id: 3,
+    type: "Project",
+    title: "Cost-Effectiveness of Climate Interventions",
+    description:
+      "Analysis comparing various climate change mitigation strategies based on expected impact per dollar",
+    detail:
+      "Comparative analysis of 15 climate interventions using updated economic models and latest climate science. Key findings: 1) Industrial heat pumps show highest cost-effectiveness at $5/tCO2e 2) Direct air capture currently at $200/tCO2e but expected to decrease 3) Policy advocacy shows uncertain but potentially very high leverage. Full methodology and data available in attached document.",
+    author: "Emma Thompson",
+    date: "2024-01-08",
+    karma: 198,
+    comments: 37,
+    tags: ["Climate", "Research", "Analysis"],
+  },
+];
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="flex flex-col gap-4">
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
     </div>
   );
 }
