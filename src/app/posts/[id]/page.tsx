@@ -23,13 +23,13 @@ function formatDate(dateString: string) {
 }
 
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>
 }
 
-export default function PostPage({ params }: PageProps) {
-  const post = posts.find((p) => p.id === Number(params.id));
+export default async function PostPage({ params }: PageProps) {
+  // Await the params
+  const { id } = await params
+  const post = posts.find((p) => p.id === Number(id))
 
   if (!post) {
     notFound();
