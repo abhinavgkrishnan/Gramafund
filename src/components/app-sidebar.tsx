@@ -25,7 +25,7 @@ const data = {
   categories: [
     {
       name: "Home",
-      url: "#",
+      url: "/posts",
       icon: Home,
     },
     {
