@@ -39,7 +39,7 @@ export default function PostPage({ params }: PageProps) {
     <div className="container max-w-4xl py-8">
       <div className="space-y-6">
         {/* Back button */}
-        <Link href="/">
+        <Link href="/posts">
           <Button variant="ghost" size="sm" className="mb-4">
             ← Back to posts
           </Button>
