@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+// import { NeynarAuthButton } from "@neynar/react";
 
 export function MainHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -70,12 +71,17 @@ export function MainHeader() {
               isSearchOpen ? "hidden sm:flex" : "flex",
             )}
           >
-            <Button variant="ghost" size="sm">
+            {/* Adjusted "Log in" Button */}
+            {/* <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary" // Adjust text color if needed
+            >
               Log in
-            </Button>
-            <Button size="sm" className="hidden sm:inline-flex">
-              Sign up
-            </Button>
+            </Button> */}
+
+            {/* Customized NeynarAuthButton */}
+            {/* <NeynarAuthButton data-variant="warpcast" data-theme="dark" /> */}
           </nav>
         </div>
       </div>

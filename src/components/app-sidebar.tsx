@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Home, Star, Users } from "lucide-react";
-import Image from "next/image";
+import { useNeynarContext } from "@neynar/react";
 
 import { NavCategories } from "@/components/nav-categories";
 import { NavUser } from "@/components/nav-user";
@@ -15,13 +15,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-// This is sample data.
+// Sample data for categories
 const data = {
-  user: {
-    name: "GK",
-    email: "gk@example.com",
-    avatar: "/image.png",
-  },
   categories: [
     {
       name: "Home",
@@ -43,6 +38,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state, toggleSidebar } = useSidebar();
+  const { user } = useNeynarContext();
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -51,6 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {state === "expanded" ? "Collapse" : "Expand"}
         </button>
       </SidebarHeader>
+
       <SidebarContent>
         {state === "expanded" ? (
           <NavCategories categories={data.categories} />
@@ -62,21 +59,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         )}
       </SidebarContent>
+
       <SidebarFooter>
-        {state === "expanded" ? (
-          <NavUser user={data.user} />
-        ) : (
-          <div className="flex flex-col items-center">
-            <Image
-              src={data.user.avatar}
-              alt={data.user.name}
-              width={24}
-              height={24}
-              className="rounded-full"
-            />
-          </div>
-        )}
+        {user && <NavUser user={user} isExpanded={state === "expanded"} />}
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );
