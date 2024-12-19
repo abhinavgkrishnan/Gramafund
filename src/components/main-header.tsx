@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { CastModal } from "@/components/cast-modal";
+import { useNeynarContext } from "@neynar/react";
 // import { NeynarAuthButton } from "@neynar/react";
 
 export function MainHeader() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { user } = useNeynarContext();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -71,17 +74,7 @@ export function MainHeader() {
               isSearchOpen ? "hidden sm:flex" : "flex",
             )}
           >
-            {/* Adjusted "Log in" Button */}
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary" // Adjust text color if needed
-            >
-              Log in
-            </Button> */}
-
-            {/* Customized NeynarAuthButton */}
-            {/* <NeynarAuthButton data-variant="warpcast" data-theme="dark" /> */}
+            {user && <CastModal />}
           </nav>
         </div>
       </div>

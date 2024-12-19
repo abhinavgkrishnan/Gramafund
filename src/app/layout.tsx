@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NeynarContextProvider, Theme } from "@neynar/react";
 import "@neynar/react/dist/style.css";
+import { Toaster } from "@/components/ui/toaster"
 import { MainHeader } from "@/components/main-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({
                 <AppSidebar />
                 <main className="flex w-full flex-col gap-6 p-4 md:gap-8">
                   {children}
+                  <Toaster />
                 </main>
               </div>
             </div>
