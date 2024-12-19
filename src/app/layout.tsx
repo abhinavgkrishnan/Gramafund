@@ -1,5 +1,6 @@
 "use client";
 import { Inter } from "next/font/google";
+import { useRouter } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NeynarContextProvider, Theme } from "@neynar/react";
 import "@neynar/react/dist/style.css";
@@ -14,6 +15,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -22,8 +25,12 @@ export default function RootLayout({
             clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID || "",
             defaultTheme: Theme.Light,
             eventsCallbacks: {
-              onAuthSuccess: () => {},
-              onSignout() {},
+              onAuthSuccess: () => {
+                router.push("/posts"); // Redirect to posts page on successful auth
+              },
+              onSignout: () => {
+                router.push("/"); // Redirect to landing page on signout
+              },
             },
           }}
         >

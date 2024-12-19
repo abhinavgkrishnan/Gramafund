@@ -1,9 +1,25 @@
 "use client";
-// import Link from "next/link";
-// import { Button } from "@/components/ui/button";
-import { NeynarAuthButton } from "@neynar/react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useNeynarContext } from "@neynar/react";
+import { NeynarAuthButton, SIWN_variant } from "@neynar/react";
 
 export default function LandingPage() {
+  const { user } = useNeynarContext();
+  const router = useRouter();
+
+  // Redirect to /posts if user is logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/posts");
+    }
+  }, [user, router]);
+
+  // If user is logged in, don't show the landing page
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="mx-auto max-w-2xl text-center">
@@ -13,10 +29,7 @@ export default function LandingPage() {
           maximize impact.
         </p>
         <div className="flex justify-center gap-4">
-          {/* <Button asChild size="lg">
-            <Link href="/posts">View Posts</Link>
-          </Button> */}
-          <NeynarAuthButton data-variant="warpcast" data-theme="dark" />
+          <NeynarAuthButton variant={SIWN_variant.WARPCAST} />
         </div>
       </div>
     </div>
