@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast"; // Updated import path
+import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 import {
   Dialog,
@@ -14,31 +14,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-const CHANNELS = {
-  memes: "Memes",
-  test: "Test Channel",
-} as const;
 
 const MAX_CHARACTERS = 320;
 
 export function CastModal() {
   const [cast, setCast] = useState("");
-  const [channel, setChannel] = useState<keyof typeof CHANNELS>("test");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useNeynarContext();
   const { toast } = useToast();
-
-  // Log the user object to check what we're getting
-  console.log("Neynar user:", user);
 
   const charCount = cast.length;
   const remainingChars = MAX_CHARACTERS - charCount;
@@ -54,19 +38,11 @@ export function CastModal() {
 
     setIsSubmitting(true);
     try {
-      console.log("Sending cast request:", {
-        signerUuid: user.signer_uuid,
-        text: cast,
-        channel,
-      });
-
       const response = await axios.post("/api/cast", {
         signerUuid: user.signer_uuid,
         text: cast,
-        channel,
+        channel: "gramafund", // hardcoded channel
       });
-
-      console.log("Cast response:", response.data);
 
       toast({
         description: "Cast published successfully",
@@ -77,7 +53,6 @@ export function CastModal() {
       console.error("Detailed cast error:", error);
 
       if (axios.isAxiosError(error)) {
-        console.error("Response data:", error.response?.data);
         const errorMessage =
           error.response?.data?.message ||
           error.response?.data?.error ||
@@ -88,7 +63,6 @@ export function CastModal() {
         });
 
         if (error.response?.status === 401) {
-          console.log("Auth error - signer UUID:", user.signer_uuid);
           toast({
             description: "Authentication error. Please try signing in again",
             variant: "destructive",
@@ -142,24 +116,7 @@ export function CastModal() {
               maxLength={MAX_CHARACTERS}
               className="min-h-[120px] md:min-h-[150px] resize-none text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
             />
-            <div className="flex items-center justify-between border-t pt-3 md:pt-4">
-              <Select
-                value={channel}
-                onValueChange={(value) =>
-                  setChannel(value as keyof typeof CHANNELS)
-                }
-              >
-                <SelectTrigger className="w-[110px] md:w-[130px] h-8 px-2 text-sm border-0 bg-transparent hover:bg-accent">
-                  <SelectValue placeholder="Select channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CHANNELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value} className="text-sm">
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-end border-t pt-3 md:pt-4">
               <div className="flex items-center gap-2 md:gap-3">
                 <span
                   className={cn(
