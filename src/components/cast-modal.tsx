@@ -43,6 +43,7 @@ export function CastModal() {
         text: cast,
         channel: "gramafund", // hardcoded channel
       });
+      console.log("Cast response:", response);
 
       toast({
         description: "Cast published successfully",
