@@ -7,11 +7,12 @@ import useSWR from "swr";
 import axios from "axios";
 import { useNeynarContext } from "@neynar/react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Post } from "@/types";
+import type { Comment, Post } from "@/types";
 
 const typeStyles = {
   Project: "bg-blue-100 text-blue-800",
@@ -35,6 +36,8 @@ interface PageProps {
 export default function PostPage({ params }: PageProps) {
   const { user } = useNeynarContext();
   const { toast } = useToast();
+  const [commentText, setCommentText] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
   // Fetch post data
   const {
@@ -47,10 +50,13 @@ export default function PostPage({ params }: PageProps) {
     return response.data;
   });
 
-  // Fetch reaction status
-  const { data: reactionData, mutate: mutateReaction } = useSWR(
+  // Create an array of comment IDs
+  const commentIds = postData?.post.replies?.map((reply) => reply.id) || [];
+
+  // Fetch reaction status for post and comments
+  const { data: reactionData, mutate: mutateReactions } = useSWR(
     user?.fid
-      ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}`
+      ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}&commentIds=${commentIds.join(",")}`
       : null,
     async (url: string) => {
       const response = await axios.get(url);
@@ -87,7 +93,20 @@ export default function PostPage({ params }: PageProps) {
         };
       }, false);
 
-      mutateReaction({ hasLiked: true }, false);
+      mutateReactions(
+        (
+          current:
+            | {
+                hasLiked: boolean;
+                reactions: Record<string, { hasLiked: boolean }>;
+              }
+            | undefined,
+        ) => ({
+          ...current,
+          hasLiked: true,
+        }),
+        false,
+      );
 
       await axios.post("/api/posts/like", {
         signerUuid: user.signer_uuid,
@@ -100,14 +119,131 @@ export default function PostPage({ params }: PageProps) {
       });
     } catch (error) {
       console.error("Failed to like post", error);
-      // Revert optimistic updates
       mutatePost();
-      mutateReaction();
+      mutateReactions();
 
       toast({
         description: "Failed to like post",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCommentLike = async (comment: Comment) => {
+    if (!user?.signer_uuid) {
+      toast({
+        description: "Please sign in with Farcaster first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const hasLiked = reactionData?.reactions[comment.id]?.hasLiked;
+
+    if (hasLiked) {
+      toast({
+        description: "You've already liked this comment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Optimistically update UI
+      mutateReactions(
+        (
+          current:
+            | {
+                hasLiked: boolean;
+                reactions: Record<string, { hasLiked: boolean }>;
+              }
+            | undefined,
+        ) => ({
+          ...current,
+          reactions: {
+            ...current?.reactions,
+            [comment.id]: { hasLiked: true },
+          },
+        }),
+        false,
+      );
+
+      mutatePost((current) => {
+        if (!current) return current;
+        return {
+          post: {
+            ...current.post,
+            replies: current.post.replies?.map((reply) =>
+              reply.id === comment.id
+                ? { ...reply, likes: reply.likes + 1 }
+                : reply,
+            ),
+          },
+        };
+      }, false);
+
+      await axios.post("/api/posts/like", {
+        signerUuid: user.signer_uuid,
+        hash: comment.id,
+        targetAuthorFid: comment.authorFid,
+      });
+
+      toast({
+        description: "Comment liked successfully",
+      });
+    } catch (error) {
+      console.error("Failed to like comment", error);
+      mutateReactions();
+      mutatePost();
+
+      toast({
+        description: "Failed to like comment",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmitComment = async () => {
+    if (!user?.signer_uuid) {
+      toast({
+        description: "Please sign in with Farcaster first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!commentText.trim()) {
+      toast({
+        description: "Please enter a comment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingComment(true);
+
+    try {
+      await axios.post("/api/posts/reply", {
+        signerUuid: user.signer_uuid,
+        text: commentText,
+        parentHash: params.id,
+      });
+
+      // Clear form and refetch post data
+      setCommentText("");
+      await mutatePost();
+
+      toast({
+        description: "Comment posted successfully",
+      });
+    } catch (error) {
+      console.error("Failed to post comment:", error);
+      toast({
+        description: "Failed to post comment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingComment(false);
     }
   };
 
@@ -201,15 +337,15 @@ export default function PostPage({ params }: PageProps) {
               onClick={handleLike}
               className={cn(
                 "h-8 w-8 p-0 transition-colors",
-                "hover:bg-red-50 hover:text-red-600", // Changed from blue to red for heart
-                reactionData?.hasLiked && "text-red-600", // Changed from blue to red
+                "hover:bg-red-50 hover:text-red-600",
+                reactionData?.hasLiked && "text-red-600",
               )}
               disabled={!user || reactionData?.hasLiked}
             >
               <Heart
                 className={cn(
                   "h-5 w-5",
-                  reactionData?.hasLiked && "fill-current", // This makes the heart filled when liked
+                  reactionData?.hasLiked && "fill-current",
                 )}
               />
             </Button>
@@ -217,7 +353,7 @@ export default function PostPage({ params }: PageProps) {
               <span
                 className={cn(
                   "font-medium",
-                  reactionData?.hasLiked && "text-red-600", // Changed from blue to red
+                  reactionData?.hasLiked && "text-red-600",
                 )}
               >
                 {post.karma}
@@ -239,11 +375,36 @@ export default function PostPage({ params }: PageProps) {
               {/* Comment form */}
               <div className="border-b pb-4">
                 <textarea
-                  className="w-full rounded-md border p-2"
-                  placeholder="Add a comment..."
+                  className={cn(
+                    "w-full rounded-md border p-2 resize-none",
+                    "focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2",
+                    !user && "cursor-not-allowed opacity-50",
+                  )}
+                  placeholder={
+                    user ? "Add a comment..." : "Please sign in to comment"
+                  }
                   rows={3}
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  disabled={!user || isSubmittingComment}
                 />
-                <Button className="mt-2">Post Comment</Button>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {commentText.length} characters
+                  </span>
+                  <Button
+                    onClick={handleSubmitComment}
+                    disabled={
+                      !user || isSubmittingComment || !commentText.trim()
+                    }
+                  >
+                    {isSubmittingComment ? (
+                      <span className="mr-2">Posting...</span>
+                    ) : (
+                      "Post Comment"
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* Actual comments */}
@@ -251,11 +412,8 @@ export default function PostPage({ params }: PageProps) {
                 {post.replies?.map((comment) => (
                   <div key={comment.id} className="rounded-lg bg-card p-4">
                     <div className="flex items-center gap-3">
-                      {" "}
-                      {/* Changed gap-2 to gap-3 to match header */}
                       {comment.authorPfp && (
                         <div className="relative w-10 h-10 overflow-hidden rounded-full border border-border">
-                          {/* Changed w-8 h-8 to w-10 h-10 to match header */}
                           <img
                             src={comment.authorPfp}
                             alt={comment.author}
@@ -264,23 +422,50 @@ export default function PostPage({ params }: PageProps) {
                         </div>
                       )}
                       <div className="flex flex-col">
-                        {" "}
-                        {/* Changed to flex-col to match header */}
                         <span className="font-medium">{comment.author}</span>
                         <span className="text-sm text-muted-foreground">
                           {formatDate(comment.timestamp)}
                         </span>
                       </div>
                     </div>
-                    <p className="mt-4">{comment.text}</p>{" "}
-                    {/* Added more top margin */}
-                    <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                    <p className="mt-4">{comment.text}</p>
+                    <div className="mt-2 flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <Heart className="h-4 w-4" /> {/* Added heart icon */}
-                        <span>{comment.likes}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCommentLike(comment)}
+                          className={cn(
+                            "h-8 w-8 p-0 transition-colors", // Remove gap-2
+                            "hover:bg-red-50 hover:text-red-600",
+                            reactionData?.reactions[comment.id]?.hasLiked &&
+                              "text-red-600",
+                          )}
+                          disabled={
+                            !user ||
+                            reactionData?.reactions[comment.id]?.hasLiked
+                          }
+                        >
+                          <Heart
+                            className={cn(
+                              "h-4 w-4",
+                              reactionData?.reactions[comment.id]?.hasLiked &&
+                                "fill-current",
+                            )}
+                          />
+                        </Button>
+                        <span
+                          className={cn(
+                            "text-sm",
+                            reactionData?.reactions[comment.id]?.hasLiked &&
+                              "text-red-600",
+                          )}
+                        >
+                          {comment.likes}
+                        </span>
                       </div>
                       {comment.replies > 0 && (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MessageSquare className="h-4 w-4" />
                           <span>{comment.replies}</span>
                         </div>

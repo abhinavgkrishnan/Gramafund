@@ -10,6 +10,7 @@ export async function GET(
   try {
     const { searchParams } = new URL(request.url);
     const viewerFid = searchParams.get("viewerFid");
+    const commentIds = searchParams.get("commentIds")?.split(',');
 
     if (!viewerFid) {
       return NextResponse.json(
@@ -18,18 +19,44 @@ export async function GET(
       );
     }
 
-    const response = await client.fetchCastReactions({
+    // Fetch reactions for main post
+    const postReaction = await client.fetchCastReactions({
       hash: params.id,
       types: ["likes"],
       viewerFid: Number(viewerFid),
-      limit: 1, // We only need to check if the user has liked it
+      limit: 1,
     });
 
-    const hasLiked = response.reactions.some(
+    const hasLiked = postReaction.reactions.some(
       (reaction) => reaction.user.fid === Number(viewerFid)
     );
 
-    return NextResponse.json({ hasLiked });
+    // If there are comment IDs, fetch their reactions
+    const commentReactions: Record<string, { hasLiked: boolean }> = {};
+    
+    if (commentIds?.length) {
+      await Promise.all(
+        commentIds.map(async (commentId) => {
+          const reaction = await client.fetchCastReactions({
+            hash: commentId,
+            types: ["likes"],
+            viewerFid: Number(viewerFid),
+            limit: 1,
+          });
+          
+          commentReactions[commentId] = {
+            hasLiked: reaction.reactions.some(
+              (r) => r.user.fid === Number(viewerFid)
+            ),
+          };
+        })
+      );
+    }
+
+    return NextResponse.json({
+      hasLiked,
+      reactions: commentReactions,
+    });
   } catch (error) {
     console.error("Error fetching reactions:", error);
     return NextResponse.json(

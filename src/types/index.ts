@@ -1,8 +1,9 @@
 export interface Comment {
   id: string;
-  author: string;
-  authorPfp?: string;
   text: string;
+  author: string;
+  authorFid?: number;
+  authorPfp?: string;
   timestamp: string;
   likes: number;
   replies: number;
