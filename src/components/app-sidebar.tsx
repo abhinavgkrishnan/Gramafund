@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Home, Star, Users } from "lucide-react";
 import { useNeynarContext } from "@neynar/react";
+import { NeynarAuthButton, SIWN_variant } from "@neynar/react";
 
 import { NavCategories } from "@/components/nav-categories";
 import { NavUser } from "@/components/nav-user";
@@ -15,7 +16,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-// Sample data for categories
 const data = {
   categories: [
     {
@@ -61,7 +61,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter>
-        {user && <NavUser user={user} isExpanded={state === "expanded"} />}
+        {user ? (
+          <NavUser user={user} isExpanded={state === "expanded"} />
+        ) : (
+          state === "expanded" && (
+            <div className="px-4 py-2">
+              <NeynarAuthButton variant={SIWN_variant.WARPCAST} />
+            </div>
+          )
+        )}
       </SidebarFooter>
 
       <SidebarRail />
