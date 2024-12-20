@@ -1,12 +1,13 @@
 export interface Comment {
   id: string;
-  text: string;
   author: string;
-  authorFid?: number;
-  authorPfp?: string;
+  authorPfp: string;
+  authorFid: number;
+  text: string;
   timestamp: string;
   likes: number;
   replies: number;
+  nestedReplies: Comment[];
 }
 
 export type Post = {

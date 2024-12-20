@@ -1,6 +1,5 @@
 "use client";
 
-import { MessageSquare, Heart } from "lucide-react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -9,25 +8,23 @@ import { useNeynarContext } from "@neynar/react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { PostHeader } from "@/components/post/PostHeader";
+import { PostEngagement } from "@/components/post/PostEngagement";
+import { CommentForm } from "@/components/comment/CommentForm";
+import { CommentComponent } from "@/components/comment/CommentComponent";
 import type { Comment, Post } from "@/types";
 
-const typeStyles = {
-  Project: "bg-blue-100 text-blue-800",
-  Comment: "bg-gray-100 text-gray-800",
-  Reaction: "bg-purple-100 text-purple-800",
-  Funding: "bg-green-100 text-green-800",
-} as const;
-
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+// Helper function to get all comment IDs including nested ones
+const getAllCommentIds = (comments: Comment[]): string[] => {
+  return comments.reduce((ids: string[], comment) => {
+    ids.push(comment.id);
+    if (comment.nestedReplies?.length) {
+      ids.push(...getAllCommentIds(comment.nestedReplies));
+    }
+    return ids;
+  }, []);
+};
 
 interface PageProps {
   params: { id: string };
@@ -50,8 +47,10 @@ export default function PostPage({ params }: PageProps) {
     return response.data;
   });
 
-  // Create an array of comment IDs
-  const commentIds = postData?.post.replies?.map((reply) => reply.id) || [];
+  // Create an array of all comment IDs (including nested ones)
+  const commentIds = postData?.post.replies 
+    ? getAllCommentIds(postData.post.replies)
+    : [];
 
   // Fetch reaction status for post and comments
   const { data: reactionData, mutate: mutateReactions } = useSWR(
@@ -94,14 +93,10 @@ export default function PostPage({ params }: PageProps) {
       }, false);
 
       mutateReactions(
-        (
-          current:
-            | {
-                hasLiked: boolean;
-                reactions: Record<string, { hasLiked: boolean }>;
-              }
-            | undefined,
-        ) => ({
+        (current: {
+          hasLiked: boolean;
+          reactions: Record<string, { hasLiked: boolean }>;
+        } | undefined) => ({
           ...current,
           hasLiked: true,
         }),
@@ -129,6 +124,25 @@ export default function PostPage({ params }: PageProps) {
     }
   };
 
+  const updateCommentLikes = (
+    comments: Comment[],
+    commentId: string,
+    increment: number
+  ): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === commentId) {
+        return { ...comment, likes: comment.likes + increment };
+      }
+      if (comment.nestedReplies?.length) {
+        return {
+          ...comment,
+          nestedReplies: updateCommentLikes(comment.nestedReplies, commentId, increment)
+        };
+      }
+      return comment;
+    });
+  };
+
   const handleCommentLike = async (comment: Comment) => {
     if (!user?.signer_uuid) {
       toast({
@@ -151,14 +165,10 @@ export default function PostPage({ params }: PageProps) {
     try {
       // Optimistically update UI
       mutateReactions(
-        (
-          current:
-            | {
-                hasLiked: boolean;
-                reactions: Record<string, { hasLiked: boolean }>;
-              }
-            | undefined,
-        ) => ({
+        (current: {
+          hasLiked: boolean;
+          reactions: Record<string, { hasLiked: boolean }>;
+        } | undefined) => ({
           ...current,
           reactions: {
             ...current?.reactions,
@@ -173,11 +183,7 @@ export default function PostPage({ params }: PageProps) {
         return {
           post: {
             ...current.post,
-            replies: current.post.replies?.map((reply) =>
-              reply.id === comment.id
-                ? { ...reply, likes: reply.likes + 1 }
-                : reply,
-            ),
+            replies: updateCommentLikes(current.post.replies || [], comment.id, 1),
           },
         };
       }, false);
@@ -229,7 +235,6 @@ export default function PostPage({ params }: PageProps) {
         parentHash: params.id,
       });
 
-      // Clear form and refetch post data
       setCommentText("");
       await mutatePost();
 
@@ -246,6 +251,44 @@ export default function PostPage({ params }: PageProps) {
       setIsSubmittingComment(false);
     }
   };
+  
+  const handleCommentReply = async (text: string, parentComment: Comment) => {
+      if (!user?.signer_uuid) {
+        toast({
+          description: "Please sign in with Farcaster first",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      if (!text.trim()) {
+        toast({
+          description: "Please enter a reply",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      try {
+        await axios.post("/api/posts/reply", {
+          signerUuid: user.signer_uuid,
+          text: text,
+          parentHash: parentComment.id, // Use the parent comment's ID
+        });
+  
+        await mutatePost();
+  
+        toast({
+          description: "Reply posted successfully",
+        });
+      } catch (error) {
+        console.error("Failed to post reply:", error);
+        toast({
+          description: "Failed to post reply",
+          variant: "destructive",
+        });
+      }
+    };
 
   if (isLoading) {
     return (
@@ -272,207 +315,56 @@ export default function PostPage({ params }: PageProps) {
   return (
     <div className="container max-w-4xl py-8">
       <div className="space-y-6">
-        {/* Back button */}
         <Link href="/posts">
           <Button variant="ghost" size="sm" className="mb-4">
             ← Back to posts
           </Button>
         </Link>
 
-        {/* Header */}
-        <div className="space-y-4">
-          {/* Author info */}
-          <div className="flex items-center gap-3">
-            {post.authorPfp && (
-              <div className="relative w-10 h-10 overflow-hidden rounded-full border border-border">
-                <img
-                  src={post.authorPfp}
-                  alt={post.author}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <div className="flex flex-col">
-              <span className="font-medium">{post.author}</span>
-              <span className="text-sm text-muted-foreground">
-                {formatDate(post.date)}
-              </span>
-            </div>
-          </div>
+        <PostHeader
+          author={post.author}
+          authorPfp={post.authorPfp}
+          date={post.date}
+          title={post.title}
+          type={post.type}
+          tags={post.tags}
+        />
 
-          {/* Title and type */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">{post.title}</h1>
-            <span
-              className={cn(
-                "inline-block rounded-md px-2 py-0.5 text-xs font-medium",
-                typeStyles[post.type],
-              )}
-            >
-              {post.type}
-            </span>
-          </div>
-
-          {/* Tags */}
-          <div className="flex gap-2">
-            {post.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
         <div className="space-y-4">
           <p className="text-lg leading-relaxed">{post.description}</p>
         </div>
 
-        {/* Engagement */}
-        <div className="flex items-center gap-4 border-t pt-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLike}
-              className={cn(
-                "h-8 w-8 p-0 transition-colors",
-                "hover:bg-red-50 hover:text-red-600",
-                reactionData?.hasLiked && "text-red-600",
-              )}
-              disabled={!user || reactionData?.hasLiked}
-            >
-              <Heart
-                className={cn(
-                  "h-5 w-5",
-                  reactionData?.hasLiked && "fill-current",
-                )}
-              />
-            </Button>
-            <div className="flex items-center gap-1">
-              <span
-                className={cn(
-                  "font-medium",
-                  reactionData?.hasLiked && "text-red-600",
-                )}
-              >
-                {post.karma}
-              </span>
-              <span className="text-muted-foreground">points</span>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="gap-2">
-            <MessageSquare className="h-4 w-4" />
-            <span>{post.comments} comments</span>
-          </Button>
-        </div>
+        <PostEngagement
+          karma={post.karma}
+          comments={post.comments}
+          hasLiked={reactionData?.hasLiked}
+          onLike={handleLike}
+          isAuthenticated={!!user}
+        />
 
-        {/* Comments section */}
         <div className="space-y-4 border-t pt-4">
           <h2 className="text-xl font-semibold">Comments ({post.comments})</h2>
           <div className="rounded-lg bg-muted p-4">
             <div className="flex flex-col gap-4">
-              {/* Comment form */}
-              <div className="border-b pb-4">
-                <textarea
-                  className={cn(
-                    "w-full rounded-md border p-2 resize-none",
-                    "focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2",
-                    !user && "cursor-not-allowed opacity-50",
-                  )}
-                  placeholder={
-                    user ? "Add a comment..." : "Please sign in to comment"
-                  }
-                  rows={3}
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  disabled={!user || isSubmittingComment}
-                />
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {commentText.length} characters
-                  </span>
-                  <Button
-                    onClick={handleSubmitComment}
-                    disabled={
-                      !user || isSubmittingComment || !commentText.trim()
-                    }
-                  >
-                    {isSubmittingComment ? (
-                      <span className="mr-2">Posting...</span>
-                    ) : (
-                      "Post Comment"
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <CommentForm
+                onSubmit={handleSubmitComment}
+                text={commentText}
+                onChange={setCommentText}
+                isSubmitting={isSubmittingComment}
+                isAuthenticated={!!user}
+              />
 
-              {/* Actual comments */}
               <div className="space-y-4">
                 {post.replies?.map((comment) => (
-                  <div key={comment.id} className="rounded-lg bg-card p-4">
-                    <div className="flex items-center gap-3">
-                      {comment.authorPfp && (
-                        <div className="relative w-10 h-10 overflow-hidden rounded-full border border-border">
-                          <img
-                            src={comment.authorPfp}
-                            alt={comment.author}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-medium">{comment.author}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(comment.timestamp)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="mt-4">{comment.text}</p>
-                    <div className="mt-2 flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleCommentLike(comment)}
-                          className={cn(
-                            "h-8 w-8 p-0 transition-colors", // Remove gap-2
-                            "hover:bg-red-50 hover:text-red-600",
-                            reactionData?.reactions[comment.id]?.hasLiked &&
-                              "text-red-600",
-                          )}
-                          disabled={
-                            !user ||
-                            reactionData?.reactions[comment.id]?.hasLiked
-                          }
-                        >
-                          <Heart
-                            className={cn(
-                              "h-4 w-4",
-                              reactionData?.reactions[comment.id]?.hasLiked &&
-                                "fill-current",
-                            )}
-                          />
-                        </Button>
-                        <span
-                          className={cn(
-                            "text-sm",
-                            reactionData?.reactions[comment.id]?.hasLiked &&
-                              "text-red-600",
-                          )}
-                        >
-                          {comment.likes}
-                        </span>
-                      </div>
-                      {comment.replies > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>{comment.replies}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                    <CommentComponent
+                      key={comment.id}
+                      comment={comment}
+                      onLike={handleCommentLike}
+                      onReply={handleCommentReply}
+                      isAuthenticated={!!user}
+                      reactionData={reactionData}
+                    />
+                  ))}
 
                 {(!post.replies || post.replies.length === 0) && (
                   <div className="text-center text-muted-foreground py-4">

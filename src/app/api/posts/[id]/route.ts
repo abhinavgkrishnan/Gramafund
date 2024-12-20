@@ -3,12 +3,59 @@ import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
 const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
+// Define types for the Neynar API response
+interface NeynarAuthor {
+  fid: number;
+  username: string;
+  display_name: string;
+  pfp_url: string;
+}
+
+interface NeynarReactions {
+  likes_count: number;
+}
+
+interface NeynarReplies {
+  count: number;
+}
+
+interface NeynarCast {
+  hash: string;
+  author: NeynarAuthor;
+  text: string;
+  timestamp: string;
+  reactions: NeynarReactions;
+  replies: NeynarReplies;
+  direct_replies?: NeynarCast[];
+}
+
+interface NeynarCastResponse {
+  cast: NeynarCast;
+}
+
+interface NeynarConversationResponse {
+  conversation: {
+    cast: NeynarCast;
+  };
+}
+
+interface TransformedComment {
+  id: string;
+  author: string;
+  authorPfp: string;
+  authorFid: number;
+  text: string;
+  timestamp: string;
+  likes: number;
+  replies: number;
+  nestedReplies: TransformedComment[];
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Fetch both the cast and its conversation
     const [castResponse, conversationResponse] = await Promise.all([
       client.lookupCastByHashOrWarpcastUrl({
         identifier: params.id,
@@ -17,28 +64,30 @@ export async function GET(
       client.lookupCastConversation({
         identifier: params.id,
         type: "hash",
-        replyDepth: 1,
+        replyDepth: 5,
       })
-    ]);
+    ]) as [NeynarCastResponse, NeynarConversationResponse];
     
     const { cast } = castResponse;
     const replies = conversationResponse.conversation.cast.direct_replies || [];
     
-    // Extract title, description, and type from the text
     const titleMatch = cast.text.match(/\[title\](.*?)\n/);
     const descriptionMatch = cast.text.match(/\[description\](.*?)\n/);
     const typeMatch = cast.text.match(/\[type\](.*?)$/);
 
-    // Transform comments
-    const comments = replies.map(reply => ({
+    const transformComment = (reply: NeynarCast): TransformedComment => ({
       id: reply.hash,
       author: reply.author.display_name || reply.author.username,
       authorPfp: reply.author.pfp_url,
+      authorFid: reply.author.fid,
       text: reply.text,
       timestamp: reply.timestamp,
       likes: reply.reactions.likes_count,
       replies: reply.replies.count,
-    }));
+      nestedReplies: (reply.direct_replies || []).map(transformComment)
+    });
+
+    const comments = replies.map(transformComment);
 
     const post = {
       id: cast.hash,
@@ -47,6 +96,7 @@ export async function GET(
       description: descriptionMatch?.[1]?.trim() || "",
       author: cast.author.display_name || cast.author.username,
       authorPfp: cast.author.pfp_url,
+      authorFid: cast.author.fid,
       date: new Date(cast.timestamp).toISOString().split("T")[0],
       karma: cast.reactions.likes_count,
       comments: cast.replies.count,
