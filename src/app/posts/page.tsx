@@ -42,19 +42,20 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0">
-      <div className="flex flex-col gap-4">
+    <div className="container mx-auto max-w-3xl px-4 py-6">
+      <div className="grid gap-4">
         {posts.map((post) => (
           <PostCard key={post.id} post={post} />
         ))}
       </div>
       
       {nextCursor && (
-        <div className="flex justify-center py-4">
+        <div className="flex justify-center mt-6">
           <Button
             variant="outline"
             onClick={() => setCursor(nextCursor)}
             disabled={isLoading}
+            className="w-full sm:w-auto"
           >
             {isLoading ? "Loading..." : "Load More"}
           </Button>
