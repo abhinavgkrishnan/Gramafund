@@ -31,6 +31,7 @@ const MAX_TITLE_CHARACTERS = 100;
 const MAX_DESCRIPTION_CHARACTERS = 320;
 
 export function CastModal() {
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<PostType>("Project");
@@ -79,6 +80,7 @@ export function CastModal() {
       setTitle("");
       setDescription("");
       setType("Project");
+      setOpen(false);
     } catch (error) {
       console.error("Detailed cast error:", error);
 
@@ -110,7 +112,8 @@ export function CastModal() {
   };
 
   return (
-    <Dialog>
+    <Dialog open={open}
+      onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-black text-white hover:bg-black/90">
           Cast
