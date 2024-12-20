@@ -20,4 +20,6 @@ export type Post = {
   comments: number;
   tags: string[];
   replies?: Comment[];
+  hasLiked?: boolean;
+  authorFid?: number;
 };

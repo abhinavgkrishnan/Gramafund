@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import axios from "axios";
+import { useNeynarContext } from "@neynar/react";
+import { useToast } from "@/hooks/use-toast";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,13 +33,83 @@ interface PageProps {
 }
 
 export default function PostPage({ params }: PageProps) {
-  const { data, error, isLoading } = useSWR<{ post: Post }>(
-    `/api/posts/${params.id}`,
+  const { user } = useNeynarContext();
+  const { toast } = useToast();
+
+  // Fetch post data
+  const {
+    data: postData,
+    error,
+    isLoading,
+    mutate: mutatePost,
+  } = useSWR<{ post: Post }>(`/api/posts/${params.id}`, async (url: string) => {
+    const response = await axios.get(url);
+    return response.data;
+  });
+
+  // Fetch reaction status
+  const { data: reactionData, mutate: mutateReaction } = useSWR(
+    user?.fid
+      ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}`
+      : null,
     async (url: string) => {
       const response = await axios.get(url);
       return response.data;
     },
   );
+
+  const handleLike = async () => {
+    if (!user?.signer_uuid) {
+      toast({
+        description: "Please sign in with Farcaster first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (reactionData?.hasLiked) {
+      toast({
+        description: "You've already liked this post",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Optimistically update both post and reaction data
+      mutatePost((current) => {
+        if (!current) return current;
+        return {
+          post: {
+            ...current.post,
+            karma: current.post.karma + 1,
+          },
+        };
+      }, false);
+
+      mutateReaction({ hasLiked: true }, false);
+
+      await axios.post("/api/posts/like", {
+        signerUuid: user.signer_uuid,
+        hash: params.id,
+        targetAuthorFid: postData?.post.authorFid,
+      });
+
+      toast({
+        description: "Post liked successfully",
+      });
+    } catch (error) {
+      console.error("Failed to like post", error);
+      // Revert optimistic updates
+      mutatePost();
+      mutateReaction();
+
+      toast({
+        description: "Failed to like post",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,11 +127,11 @@ export default function PostPage({ params }: PageProps) {
     );
   }
 
-  const post = data?.post;
-
-  if (!post) {
+  if (!postData?.post) {
     notFound();
   }
+
+  const post = postData.post;
 
   return (
     <div className="container max-w-4xl py-8">
@@ -117,14 +189,41 @@ export default function PostPage({ params }: PageProps) {
 
         {/* Content */}
         <div className="space-y-4">
-          <p className="text-lg text-muted-foreground">{post.description}</p>
+          <p className="text-lg leading-relaxed">{post.description}</p>
         </div>
 
         {/* Engagement */}
         <div className="flex items-center gap-4 border-t pt-4">
-          <div className="flex items-center gap-1">
-            <span className="font-medium">{post.karma}</span>
-            <span className="text-muted-foreground">points</span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLike}
+              className={cn(
+                "h-8 w-8 p-0 transition-colors",
+                "hover:bg-red-50 hover:text-red-600", // Changed from blue to red for heart
+                reactionData?.hasLiked && "text-red-600", // Changed from blue to red
+              )}
+              disabled={!user || reactionData?.hasLiked}
+            >
+              <Heart
+                className={cn(
+                  "h-5 w-5",
+                  reactionData?.hasLiked && "fill-current", // This makes the heart filled when liked
+                )}
+              />
+            </Button>
+            <div className="flex items-center gap-1">
+              <span
+                className={cn(
+                  "font-medium",
+                  reactionData?.hasLiked && "text-red-600", // Changed from blue to red
+                )}
+              >
+                {post.karma}
+              </span>
+              <span className="text-muted-foreground">points</span>
+            </div>
           </div>
           <Button variant="ghost" size="sm" className="gap-2">
             <MessageSquare className="h-4 w-4" />

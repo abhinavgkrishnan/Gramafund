@@ -22,29 +22,39 @@ export async function GET(request: Request) {
           cursor: cursor || undefined,
         });
 
-        const posts = response.casts.map((cast) => {
-          const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
-          const descriptionMatch = cast.text.match(
-            /\[description\]\s*(.*?)(?=\s*\[|$)/,
-          );
-          const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
+        const posts = response.casts
+          .map((cast) => {
+            const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
+            const descriptionMatch = cast.text.match(
+              /\[description\]\s*(.*?)(?=\s*\[|$)/,
+            );
+            const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
 
-          return {
-            id: cast.hash,
-            type: typeMatch?.[1]?.trim() as
-              | "Project"
-              | "Comment"
-              | "Reaction"
-              | "Funding",
-            title: titleMatch?.[1]?.trim() || cast.text.slice(0, 50),
-            description: descriptionMatch?.[1]?.trim() || "",
-            author: cast.author.display_name || cast.author.username,
-            date: new Date(cast.timestamp).toISOString().split("T")[0],
-            karma: cast.reactions.likes_count,
-            comments: cast.replies.count,
-            tags: [],
-          };
-        });
+            // If any of the required fields are missing, return null
+            if (!titleMatch?.[1] || !descriptionMatch?.[1] || !typeMatch?.[1]) {
+              return null;
+            }
+
+            // Validate type is one of the allowed values
+            const validTypes = ["Project", "Comment", "Reaction", "Funding"];
+            const type = typeMatch[1].trim();
+            if (!validTypes.includes(type)) {
+              return null;
+            }
+
+            return {
+              id: cast.hash,
+              type: type as "Project" | "Comment" | "Reaction" | "Funding",
+              title: titleMatch[1].trim(),
+              description: descriptionMatch[1].trim(),
+              author: cast.author.display_name || cast.author.username,
+              date: new Date(cast.timestamp).toISOString().split("T")[0],
+              karma: cast.reactions.likes_count,
+              comments: cast.replies.count,
+              tags: [],
+            };
+          })
+          .filter((post): post is NonNullable<typeof post> => post !== null); // Type guard to filter out null values
 
         return NextResponse.json({
           posts,
