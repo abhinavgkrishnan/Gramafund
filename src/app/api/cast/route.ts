@@ -8,35 +8,32 @@ const CHANNELS = {
 } as const;
 
 export async function POST(request: NextRequest) {
-  console.log("API Key:", process.env.NEYNAR_API_KEY?.slice(0, 5) + "..."); // Log first few chars of API key
-
   try {
     const body = await request.json();
     console.log("Received request body:", body);
-
-    const { signerUuid, text, channel } = body as {
+    
+    const { signerUuid, title, description, type, channel } = body as {
       signerUuid: string;
-      text: string;
+      title: string;
+      description: string;
+      type: "Project" | "Comment" | "Reaction" | "Funding";
       channel: keyof typeof CHANNELS;
     };
-
-    console.log("Attempting to publish cast with:", {
-      signerUuid,
-      text,
-      parent: CHANNELS[channel],
-    });
-
+    
+    // Format the text
+    const formattedText = `[title] ${title}\n[description] ${description}\n[type] ${type}`;
+    
     const response = await client.publishCast({
       signerUuid,
-      text,
+      text: formattedText,
       parent: CHANNELS[channel],
     });
-
+    
     console.log("Cast response:", response);
-
+    
     return NextResponse.json(
       { message: "Cast published successfully", data: response },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (err) {
     console.error("Detailed error:", err);

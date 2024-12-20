@@ -6,6 +6,7 @@ import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import axios from "axios";
 import {
   Dialog,
@@ -14,18 +15,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-const MAX_CHARACTERS = 320;
+const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"] as const;
+type PostType = (typeof POST_TYPES)[number];
+
+const MAX_TITLE_CHARACTERS = 100;
+const MAX_DESCRIPTION_CHARACTERS = 320;
 
 export function CastModal() {
-  const [cast, setCast] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [type, setType] = useState<PostType>("Project");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useNeynarContext();
   const { toast } = useToast();
 
-  const charCount = cast.length;
-  const remainingChars = MAX_CHARACTERS - charCount;
+  const titleCount = title.length;
+  const descriptionCount = description.length;
+  const remainingTitleChars = MAX_TITLE_CHARACTERS - titleCount;
+  const remainingDescriptionChars =
+    MAX_DESCRIPTION_CHARACTERS - descriptionCount;
 
   const handleSubmit = async () => {
     if (!user?.signer_uuid) {
@@ -36,20 +53,32 @@ export function CastModal() {
       return;
     }
 
+    if (!title.trim() || !description.trim()) {
+      toast({
+        description: "Please fill in both title and description",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await axios.post("/api/cast", {
         signerUuid: user.signer_uuid,
-        text: cast,
-        channel: "gramafund", // hardcoded channel
+        title,
+        description,
+        type,
+        channel: "gramafund",
       });
-      console.log("Cast response:", response);
+      console.log("response", response);
 
       toast({
         description: "Cast published successfully",
       });
 
-      setCast("");
+      setTitle("");
+      setDescription("");
+      setType("Project");
     } catch (error) {
       console.error("Detailed cast error:", error);
 
@@ -106,34 +135,82 @@ export function CastModal() {
             </Avatar>
           </div>
           <div className="flex-1 space-y-3 md:space-y-4">
+            <div className="space-y-2">
+              <Input
+                placeholder="Title"
+                value={title}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_TITLE_CHARACTERS) {
+                    setTitle(e.target.value);
+                  }
+                }}
+                maxLength={MAX_TITLE_CHARACTERS}
+                className="border-0 border-b rounded-none px-0 text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <div className="flex justify-end">
+                <span
+                  className={cn(
+                    "text-xs",
+                    remainingTitleChars <= 20
+                      ? "text-yellow-600"
+                      : "text-muted-foreground",
+                    remainingTitleChars <= 0 ? "text-red-600" : "",
+                  )}
+                >
+                  {remainingTitleChars}
+                </span>
+              </div>
+            </div>
+
             <Textarea
-              placeholder="What's on your mind?"
-              value={cast}
+              placeholder="Description"
+              value={description}
               onChange={(e) => {
-                if (e.target.value.length <= MAX_CHARACTERS) {
-                  setCast(e.target.value);
+                if (e.target.value.length <= MAX_DESCRIPTION_CHARACTERS) {
+                  setDescription(e.target.value);
                 }
               }}
-              maxLength={MAX_CHARACTERS}
-              className="min-h-[120px] md:min-h-[150px] resize-none text-base md:text-lg focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
+              maxLength={MAX_DESCRIPTION_CHARACTERS}
+              className="min-h-[120px] md:min-h-[150px] resize-none text-base md:text-sm focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
             />
-            <div className="flex items-center justify-end border-t pt-3 md:pt-4">
+
+            <div className="flex items-center justify-between border-t pt-3 md:pt-4">
+              <Select
+                value={type}
+                onValueChange={(value) => setType(value as PostType)}
+              >
+                <SelectTrigger className="w-[110px] md:w-[130px] h-8 px-2 text-sm border-0 bg-transparent hover:bg-accent">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {POST_TYPES.map((type) => (
+                    <SelectItem key={type} value={type} className="text-sm">
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <div className="flex items-center gap-2 md:gap-3">
                 <span
                   className={cn(
                     "text-sm",
-                    remainingChars <= 20
+                    remainingDescriptionChars <= 20
                       ? "text-yellow-600"
                       : "text-muted-foreground",
-                    remainingChars <= 0 ? "text-red-600" : "",
+                    remainingDescriptionChars <= 0 ? "text-red-600" : "",
                   )}
                 >
-                  {remainingChars}
+                  {remainingDescriptionChars}
                 </span>
                 <Button
                   onClick={handleSubmit}
                   disabled={
-                    !cast.trim() || charCount > MAX_CHARACTERS || isSubmitting
+                    !title.trim() ||
+                    !description.trim() ||
+                    titleCount > MAX_TITLE_CHARACTERS ||
+                    descriptionCount > MAX_DESCRIPTION_CHARACTERS ||
+                    isSubmitting
                   }
                   className="bg-black text-white hover:bg-black/90"
                   size="sm"

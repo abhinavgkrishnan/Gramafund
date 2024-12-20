@@ -2,6 +2,7 @@
 
 import { MessageSquare } from 'lucide-react'
 import Link from "next/link"
+import { Post } from "@/types"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,17 +13,6 @@ import {
 } from "@/components/ui/hover-card"
 import { cn } from "@/lib/utils"
 
-interface Post {
-  id: number
-  title: string
-  type: "Project" | "Comment" | "Reaction" | "Funding"
-  author: string
-  date: string
-  description: string
-  karma: number
-  comments: number
-  tags: string[]
-}
 
 interface PostCardProps {
   post: Post
