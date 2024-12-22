@@ -11,29 +11,29 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     console.log("Received request body:", body);
-    
-    const { signerUuid, title, description, type, channel } = body as {
+
+    const { signerUuid, title, description, detail, type, channel } = body as {
       signerUuid: string;
       title: string;
       description: string;
+      detail: string;
       type: "Project" | "Comment" | "Reaction" | "Funding";
       channel: keyof typeof CHANNELS;
     };
-    
-    // Format the text
-    const formattedText = `[title] ${title}\n[description] ${description}\n[type] ${type}`;
-    
+
+    const formattedText = `[title] ${title}\n[description] ${description}\n[detail] ${detail}\n[type] ${type}`;
+
     const response = await client.publishCast({
       signerUuid,
       text: formattedText,
       parent: CHANNELS[channel],
     });
-    
+
     console.log("Cast response:", response);
-    
+
     return NextResponse.json(
       { message: "Cast published successfully", data: response },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     console.error("Detailed error:", err);

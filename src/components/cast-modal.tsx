@@ -6,7 +6,7 @@ import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import axios from "axios";
 import {
   Dialog,
@@ -27,23 +27,31 @@ import { Textarea } from "@/components/ui/textarea";
 const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"] as const;
 type PostType = (typeof POST_TYPES)[number];
 
-const MAX_TITLE_CHARACTERS = 100;
-const MAX_DESCRIPTION_CHARACTERS = 320;
+const MAX_TITLE_CHARS = 40;
+const MAX_DESCRIPTION_CHARS = 200;
+const MAX_DETAIL_CHARS = 750;
 
 export function CastModal() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [detail, setDetail] = useState("");
   const [type, setType] = useState<PostType>("Project");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useNeynarContext();
   const { toast } = useToast();
 
-  const titleCount = title.length;
-  const descriptionCount = description.length;
-  const remainingTitleChars = MAX_TITLE_CHARACTERS - titleCount;
-  const remainingDescriptionChars =
-    MAX_DESCRIPTION_CHARACTERS - descriptionCount;
+  const counts = {
+    title: title.length,
+    description: description.length,
+    detail: detail.length,
+  };
+
+  const remaining = {
+    title: MAX_TITLE_CHARS - counts.title,
+    description: MAX_DESCRIPTION_CHARS - counts.description,
+    detail: MAX_DETAIL_CHARS - counts.detail,
+  };
 
   const handleSubmit = async () => {
     if (!user?.signer_uuid) {
@@ -54,9 +62,9 @@ export function CastModal() {
       return;
     }
 
-    if (!title.trim() || !description.trim()) {
+    if (!title.trim() || !description.trim() || !detail.trim()) {
       toast({
-        description: "Please fill in both title and description",
+        description: "Please fill in all fields",
         variant: "destructive",
       });
       return;
@@ -64,14 +72,14 @@ export function CastModal() {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post("/api/cast", {
+      await axios.post("/api/cast", {
         signerUuid: user.signer_uuid,
         title,
         description,
+        detail,
         type,
         channel: "gramafund",
       });
-      console.log("response", response);
 
       toast({
         description: "Cast published successfully",
@@ -79,6 +87,7 @@ export function CastModal() {
 
       setTitle("");
       setDescription("");
+      setDetail("");
       setType("Project");
       setOpen(false);
     } catch (error) {
@@ -93,13 +102,6 @@ export function CastModal() {
           description: errorMessage,
           variant: "destructive",
         });
-
-        if (error.response?.status === 401) {
-          toast({
-            description: "Authentication error. Please try signing in again",
-            variant: "destructive",
-          });
-        }
       } else {
         toast({
           description: "An unexpected error occurred",
@@ -111,18 +113,27 @@ export function CastModal() {
     }
   };
 
+  const getCharacterCountClass = (remaining: number, threshold: number) =>
+    cn(
+      "text-xs",
+      remaining <= threshold * 0.1
+        ? "text-red-600"
+        : remaining <= threshold * 0.2
+          ? "text-yellow-600"
+          : "text-muted-foreground",
+    );
+
   return (
-    <Dialog open={open}
-      onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-black text-white hover:bg-black/90">
-          Cast
+          Post
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-32px)] p-4 md:p-6 max-w-[440px] top-[50%] rounded-xl">
+      <DialogContent className="w-[calc(100%-32px)] p-4 md:p-6 max-w-[600px] top-[50%] rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold md:text-xl">
-            New Cast
+            New Post
           </DialogTitle>
         </DialogHeader>
         <div className="flex gap-3 md:gap-4 pt-4">
@@ -137,52 +148,91 @@ export function CastModal() {
               </AvatarFallback>
             </Avatar>
           </div>
-          <div className="flex-1 space-y-3 md:space-y-4">
-            <div className="space-y-2">
-              <Input
+          <div className="flex-1 space-y-4">
+            {/* Title Section */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Title</label>
+              <Textarea
                 placeholder="Title"
                 value={title}
                 onChange={(e) => {
-                  if (e.target.value.length <= MAX_TITLE_CHARACTERS) {
+                  if (e.target.value.length <= MAX_TITLE_CHARS) {
                     setTitle(e.target.value);
                   }
                 }}
-                maxLength={MAX_TITLE_CHARACTERS}
-                className="border-0 border-b rounded-none px-0 text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+                maxLength={MAX_TITLE_CHARS}
+                className="resize-none px-3 py-2"
               />
               <div className="flex justify-end">
                 <span
-                  className={cn(
-                    "text-xs",
-                    remainingTitleChars <= 20
-                      ? "text-yellow-600"
-                      : "text-muted-foreground",
-                    remainingTitleChars <= 0 ? "text-red-600" : "",
+                  className={getCharacterCountClass(
+                    remaining.title,
+                    MAX_TITLE_CHARS,
                   )}
                 >
-                  {remainingTitleChars}
+                  {remaining.title} characters remaining
                 </span>
               </div>
             </div>
 
-            <Textarea
-              placeholder="Description"
-              value={description}
-              onChange={(e) => {
-                if (e.target.value.length <= MAX_DESCRIPTION_CHARACTERS) {
-                  setDescription(e.target.value);
-                }
-              }}
-              maxLength={MAX_DESCRIPTION_CHARACTERS}
-              className="min-h-[120px] md:min-h-[150px] resize-none text-base md:text-sm focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
-            />
+            {/* Description Section */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                placeholder="Write a brief description"
+                value={description}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_DESCRIPTION_CHARS) {
+                    setDescription(e.target.value);
+                  }
+                }}
+                maxLength={MAX_DESCRIPTION_CHARS}
+                className="min-h-[80px] resize-none"
+              />
+              <div className="flex justify-end">
+                <span
+                  className={getCharacterCountClass(
+                    remaining.description,
+                    MAX_DESCRIPTION_CHARS,
+                  )}
+                >
+                  {remaining.description} characters remaining
+                </span>
+              </div>
+            </div>
 
-            <div className="flex items-center justify-between border-t pt-3 md:pt-4">
+            {/* Detail Section */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Details</label>
+              <Textarea
+                placeholder="Provide more detailed information"
+                value={detail}
+                onChange={(e) => {
+                  if (e.target.value.length <= MAX_DETAIL_CHARS) {
+                    setDetail(e.target.value);
+                  }
+                }}
+                maxLength={MAX_DETAIL_CHARS}
+                className="min-h-[150px] resize-none"
+              />
+              <div className="flex justify-end">
+                <span
+                  className={getCharacterCountClass(
+                    remaining.detail,
+                    MAX_DETAIL_CHARS,
+                  )}
+                >
+                  {remaining.detail} characters remaining
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t pt-4">
               <Select
                 value={type}
                 onValueChange={(value) => setType(value as PostType)}
               >
-                <SelectTrigger className="w-[110px] md:w-[130px] h-8 px-2 text-sm border-0 bg-transparent hover:bg-accent">
+                <SelectTrigger className="w-[130px] h-8 px-2 text-sm">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -194,33 +244,22 @@ export function CastModal() {
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-2 md:gap-3">
-                <span
-                  className={cn(
-                    "text-sm",
-                    remainingDescriptionChars <= 20
-                      ? "text-yellow-600"
-                      : "text-muted-foreground",
-                    remainingDescriptionChars <= 0 ? "text-red-600" : "",
-                  )}
-                >
-                  {remainingDescriptionChars}
-                </span>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={
-                    !title.trim() ||
-                    !description.trim() ||
-                    titleCount > MAX_TITLE_CHARACTERS ||
-                    descriptionCount > MAX_DESCRIPTION_CHARACTERS ||
-                    isSubmitting
-                  }
-                  className="bg-black text-white hover:bg-black/90"
-                  size="sm"
-                >
-                  {isSubmitting ? "Casting..." : "Cast"}
-                </Button>
-              </div>
+              <Button
+                onClick={handleSubmit}
+                disabled={
+                  !title.trim() ||
+                  !description.trim() ||
+                  !detail.trim() ||
+                  counts.title > MAX_TITLE_CHARS ||
+                  counts.description > MAX_DESCRIPTION_CHARS ||
+                  counts.detail > MAX_DETAIL_CHARS ||
+                  isSubmitting
+                }
+                className="bg-black text-white hover:bg-black/90"
+                size="sm"
+              >
+                {isSubmitting ? "Posting..." : "Post"}
+              </Button>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ export default function PostPage({ params }: PageProps) {
   });
 
   // Create an array of all comment IDs (including nested ones)
-  const commentIds = postData?.post.replies 
+  const commentIds = postData?.post.replies
     ? getAllCommentIds(postData.post.replies)
     : [];
 
@@ -93,10 +93,14 @@ export default function PostPage({ params }: PageProps) {
       }, false);
 
       mutateReactions(
-        (current: {
-          hasLiked: boolean;
-          reactions: Record<string, { hasLiked: boolean }>;
-        } | undefined) => ({
+        (
+          current:
+            | {
+                hasLiked: boolean;
+                reactions: Record<string, { hasLiked: boolean }>;
+              }
+            | undefined,
+        ) => ({
           ...current,
           hasLiked: true,
         }),
@@ -127,16 +131,20 @@ export default function PostPage({ params }: PageProps) {
   const updateCommentLikes = (
     comments: Comment[],
     commentId: string,
-    increment: number
+    increment: number,
   ): Comment[] => {
-    return comments.map(comment => {
+    return comments.map((comment) => {
       if (comment.id === commentId) {
         return { ...comment, likes: comment.likes + increment };
       }
       if (comment.nestedReplies?.length) {
         return {
           ...comment,
-          nestedReplies: updateCommentLikes(comment.nestedReplies, commentId, increment)
+          nestedReplies: updateCommentLikes(
+            comment.nestedReplies,
+            commentId,
+            increment,
+          ),
         };
       }
       return comment;
@@ -165,10 +173,14 @@ export default function PostPage({ params }: PageProps) {
     try {
       // Optimistically update UI
       mutateReactions(
-        (current: {
-          hasLiked: boolean;
-          reactions: Record<string, { hasLiked: boolean }>;
-        } | undefined) => ({
+        (
+          current:
+            | {
+                hasLiked: boolean;
+                reactions: Record<string, { hasLiked: boolean }>;
+              }
+            | undefined,
+        ) => ({
           ...current,
           reactions: {
             ...current?.reactions,
@@ -183,7 +195,11 @@ export default function PostPage({ params }: PageProps) {
         return {
           post: {
             ...current.post,
-            replies: updateCommentLikes(current.post.replies || [], comment.id, 1),
+            replies: updateCommentLikes(
+              current.post.replies || [],
+              comment.id,
+              1,
+            ),
           },
         };
       }, false);
@@ -251,44 +267,44 @@ export default function PostPage({ params }: PageProps) {
       setIsSubmittingComment(false);
     }
   };
-  
+
   const handleCommentReply = async (text: string, parentComment: Comment) => {
-      if (!user?.signer_uuid) {
-        toast({
-          description: "Please sign in with Farcaster first",
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      if (!text.trim()) {
-        toast({
-          description: "Please enter a reply",
-          variant: "destructive",
-        });
-        return;
-      }
-  
-      try {
-        await axios.post("/api/posts/reply", {
-          signerUuid: user.signer_uuid,
-          text: text,
-          parentHash: parentComment.id, // Use the parent comment's ID
-        });
-  
-        await mutatePost();
-  
-        toast({
-          description: "Reply posted successfully",
-        });
-      } catch (error) {
-        console.error("Failed to post reply:", error);
-        toast({
-          description: "Failed to post reply",
-          variant: "destructive",
-        });
-      }
-    };
+    if (!user?.signer_uuid) {
+      toast({
+        description: "Please sign in with Farcaster first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!text.trim()) {
+      toast({
+        description: "Please enter a reply",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await axios.post("/api/posts/reply", {
+        signerUuid: user.signer_uuid,
+        text: text,
+        parentHash: parentComment.id, // Use the parent comment's ID
+      });
+
+      await mutatePost();
+
+      toast({
+        description: "Reply posted successfully",
+      });
+    } catch (error) {
+      console.error("Failed to post reply:", error);
+      toast({
+        description: "Failed to post reply",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -321,6 +337,7 @@ export default function PostPage({ params }: PageProps) {
           </Button>
         </Link>
 
+        {/* Author info and title */}
         <PostHeader
           author={post.author}
           authorPfp={post.authorPfp}
@@ -330,8 +347,18 @@ export default function PostPage({ params }: PageProps) {
           tags={post.tags}
         />
 
+        {/* Description */}
         <div className="space-y-4">
-          <p className="text-lg leading-relaxed">{post.description}</p>
+          <p className="text-lg leading-relaxed text-muted-foreground">
+            {post.description}
+          </p>
+        </div>
+
+        {/* Details */}
+        <div className="space-y-4">
+          <p className="text-lg leading-relaxed whitespace-pre-wrap">
+            {post.detail}
+          </p>
         </div>
 
         <PostEngagement
@@ -356,15 +383,15 @@ export default function PostPage({ params }: PageProps) {
 
               <div className="space-y-4">
                 {post.replies?.map((comment) => (
-                    <CommentComponent
-                      key={comment.id}
-                      comment={comment}
-                      onLike={handleCommentLike}
-                      onReply={handleCommentReply}
-                      isAuthenticated={!!user}
-                      reactionData={reactionData}
-                    />
-                  ))}
+                  <CommentComponent
+                    key={comment.id}
+                    comment={comment}
+                    onLike={handleCommentLike}
+                    onReply={handleCommentReply}
+                    isAuthenticated={!!user}
+                    reactionData={reactionData}
+                  />
+                ))}
 
                 {(!post.replies || post.replies.length === 0) && (
                   <div className="text-center text-muted-foreground py-4">

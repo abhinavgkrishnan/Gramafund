@@ -15,6 +15,7 @@ export type Post = {
   type: "Project" | "Comment" | "Reaction" | "Funding";
   title: string;
   description: string;
+  detail: string;
   author: string;
   authorPfp?: string;
   date: string;
