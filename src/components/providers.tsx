@@ -1,41 +1,74 @@
 "use client";
 
-import { PropsWithChildren, useEffect } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { NeynarContextProvider, Theme } from "@neynar/react";
-import FrameSDK from "@farcaster/frame-sdk";
-import { farcasterFrame } from "@farcaster/frame-wagmi-connector";
-import { connect } from "wagmi/actions";
-import { wagmiConfig } from "@/lib/wagmiConfig";
 import { Toaster } from "@/components/ui/toaster";
 import { MainHeader } from "@/components/main-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
+import { wagmiConfig } from "@/lib/wagmiConfig";
 
-// Create a client
 const queryClient = new QueryClient();
 
 export function Providers({ children }: PropsWithChildren) {
   const router = useRouter();
+  const [isFrameLoaded, setIsFrameLoaded] = useState(false);
 
   useEffect(() => {
     const init = async () => {
-      const context = await FrameSDK.context;
+      try {
+        if (typeof window === 'undefined') return;
 
-      // Autoconnect if running in a frame
-      if (context?.client.clientFid) {
-        connect(wagmiConfig, { connector: farcasterFrame() });
+        console.log("Initializing Frame SDK...");
+        
+        // Wait for frame SDK to be ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const frameSDK = (await import('@farcaster/frame-sdk')).default;
+        const context = await frameSDK.context;
+
+        if (context?.client.clientFid) {
+          console.log("Frame context found, connecting wallet...");
+          const { connect } = await import('wagmi/actions');
+          const { farcasterFrame } = await import('@farcaster/frame-wagmi-connector');
+          
+          try {
+            await connect(wagmiConfig, { 
+              connector: farcasterFrame() 
+            });
+            console.log("Wallet connected successfully");
+          } catch (connError) {
+            console.warn("Wallet connection failed:", connError);
+          }
+        }
+
+        setIsFrameLoaded(true);
+
+        // Hide splash screen after UI renders
+        setTimeout(() => {
+          console.log("Frame ready");
+          frameSDK.actions.ready();
+        }, 500);
+      } catch (error) {
+        console.error("Frame initialization error:", error);
+        setIsFrameLoaded(true); // Still set to true to allow app to render
       }
-
-      // Hide splash screen after UI renders
-      setTimeout(() => {
-        FrameSDK.actions.ready();
-      }, 500);
     };
+
     init();
   }, []);
+
+  // Optional: Show loading state while frame is initializing
+  if (!isFrameLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <WagmiProvider config={wagmiConfig}>
@@ -46,9 +79,11 @@ export function Providers({ children }: PropsWithChildren) {
             defaultTheme: Theme.Light,
             eventsCallbacks: {
               onAuthSuccess: () => {
+                console.log("Neynar auth success");
                 router.push("/posts");
               },
               onSignout: () => {
+                console.log("Neynar signout");
                 router.push("/");
               },
             },
