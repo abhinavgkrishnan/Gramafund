@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-// import { Input } from "@/components/ui/input";
 import axios from "axios";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +32,29 @@ const MAX_TITLE_CHARS = 40;
 const MAX_DESCRIPTION_CHARS = 200;
 const MAX_DETAIL_CHARS = 750;
 
-export function CastModal() {
-  const [open, setOpen] = useState(false);
+interface CastModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function CastModal({
+  open: externalOpen,
+  onOpenChange,
+}: CastModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Combine internal and external state
+  const isOpen = externalOpen ?? internalOpen;
+  const handleOpenChange = onOpenChange ?? setInternalOpen;
+
+  // Handle frame redirect
+  useEffect(() => {
+    if (searchParams.get("openModal") === "true") {
+      handleOpenChange(true);
+    }
+  }, [searchParams, handleOpenChange]);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [detail, setDetail] = useState("");
@@ -89,7 +111,7 @@ export function CastModal() {
       setDescription("");
       setDetail("");
       setType("Project");
-      setOpen(false);
+      handleOpenChange(false);
     } catch (error) {
       console.error("Detailed cast error:", error);
 
@@ -124,10 +146,13 @@ export function CastModal() {
     );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-black text-white hover:bg-black/90">
-          Post
+        <Button
+          size="icon"
+          className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-black shadow-lg hover:bg-black/90"
+        >
+          <Plus className="h-6 w-6" />
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[calc(100%-32px)] p-4 md:p-6 max-w-[600px] top-[50%] rounded-xl">
