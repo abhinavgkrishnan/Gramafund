@@ -12,21 +12,28 @@ const nextConfig = {
             key: 'Access-Control-Allow-Origin',
             value: '*',
           },
+          {
+            key: 'Content-Type',
+            value: 'application/json',
+          },
         ],
       },
     ];
   },
-  images: {
-    domains: ['gramafund.vercel.app'], // Add your domain
-  },
-  // If you need to handle dynamic API routes
   async rewrites() {
     return [
+      {
+        source: '/.well-known/farcaster.json',
+        destination: '/api/farcaster',
+      },
       {
         source: '/api/:path*',
         destination: '/api/:path*',
       },
     ];
+  },
+  images: {
+    domains: ['gramafund.vercel.app'],
   },
 };
 
