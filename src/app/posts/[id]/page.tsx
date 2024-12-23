@@ -54,13 +54,15 @@ export default function PostPage({ params }: PageProps) {
 
   // Fetch reaction status for post and comments
   const { data: reactionData, mutate: mutateReactions } = useSWR(
-    user?.fid
-      ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}&commentIds=${commentIds.join(",")}`
+    user?.fid && postData?.post
+      ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}${
+          commentIds.length ? `&commentIds=${commentIds.join(",")}` : ''
+        }`
       : null,
     async (url: string) => {
       const response = await axios.get(url);
       return response.data;
-    },
+    }
   );
 
   const handleLike = async () => {
