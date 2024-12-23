@@ -4,7 +4,7 @@ import App from "./app";
 const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "1", // Keep as "1" since you're using verified domain
+  version: "next", // Keep as "1" since you're using verified domain
   imageUrl: `${appUrl}/image.png`,
   button: {
     title: "Launch Gramafund",
