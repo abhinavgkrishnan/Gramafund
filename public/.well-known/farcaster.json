@@ -8,7 +8,7 @@
     "version": "1",
     "name": "Gramafund",
     "iconUrl": "https://gramafund.vercel.app/image.png",
-    "homeUrl": "https://gramafund.vercel.app/posts",
+    "homeUrl": "https://gramafund.vercel.app/frame",
     "imageUrl": "https://gramafund.vercel.app/image.png",
     "buttonTitle": "All posts",
     "splashImageUrl": "https://gramafund.vercel.app/image.png",

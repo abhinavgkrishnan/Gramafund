@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       JSON.stringify({
         frames: [
           {
-            version: "vNext",
+            version: "1",
             image: "https://gramafund.vercel.app/image.png",
             buttons: [
               {
