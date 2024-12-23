@@ -10,27 +10,29 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const frameMetadata = {
+    version: "1",
+    imageUrl: "https://gramafund.vercel.app/image.png",
+    buttons: [
+      {
+        label: "View Posts",
+        action: "link",
+        target: "https://gramafund.vercel.app/posts"
+      },
+      {
+        label: "Create Post",
+        action: "post_redirect",
+        target: "https://gramafund.vercel.app/posts?openModal=true"
+      }
+    ]
+  };
+
   return (
     <html lang="en">
       <head>
         <meta
           name="fc:frame"
-          content='{
-            "version": "1",
-            "imageUrl": "https://gramafund.vercel.app/image.png",
-            "buttons": [
-              {
-                "label": "View Posts",
-                "action": "link",
-                "target": "https://gramafund.vercel.app/posts"
-              },
-              {
-                "label": "Create Post",
-                "action": "post_redirect",
-                "target": "https://gramafund.vercel.app/posts?openModal=true"
-              }
-            ]
-          }'
+          content={JSON.stringify(frameMetadata)}
         />
       </head>
       <body className={inter.className}>

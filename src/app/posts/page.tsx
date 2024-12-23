@@ -1,52 +1,59 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { PostCard } from "@/components/post-card";
 import { usePosts } from "@/hooks/use-posts";
 import { Button } from "@/components/ui/button";
-import { CastModal } from "@/components/cast-modal"; // Import your modal component
+import { CastModal } from "@/components/cast-modal";
+import { Suspense } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 
-export default function Home() {
+function PostsContent() {
   const [cursor, setCursor] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { posts, nextCursor, isLoading, isError, refresh } = usePosts(cursor || undefined);
+  const { posts, nextCursor, isLoading, isError, refresh } = usePosts(
+    cursor || undefined,
+  );
   const searchParams = useSearchParams();
 
   useEffect(() => {
     // Check for openModal parameter
-    if (searchParams.get('openModal') === 'true') {
+    if (searchParams.get("openModal") === "true") {
       setIsModalOpen(true);
     }
   }, [searchParams]);
 
   useEffect(() => {
     // Create frame meta tag
-    const meta = document.createElement('meta');
-    meta.setAttribute('name', 'fc:frame');
-    meta.setAttribute('content', JSON.stringify({
-      version: "1",
-      image: "https://gramafund.vercel.app/image.png", // Use your actual image
-      buttons: [
-        {
-          label: "Browse Posts",
-          action: "post_redirect",
-          target: "https://gramafund.vercel.app/posts"
-        },
-        {
-          label: "Create Post",
-          action: "post_redirect",
-          target: "https://gramafund.vercel.app/posts?openModal=true"
-        }
-      ],
-      postUrl: "https://gramafund.vercel.app/posts"
-    }));
+    const meta = document.createElement("meta");
+    meta.setAttribute("name", "fc:frame");
+    meta.setAttribute(
+      "content",
+      JSON.stringify({
+        version: "1",
+        image: "https://gramafund.vercel.app/image.png", // Use your actual image
+        buttons: [
+          {
+            label: "Browse Posts",
+            action: "post_redirect",
+            target: "https://gramafund.vercel.app/posts",
+          },
+          {
+            label: "Create Post",
+            action: "post_redirect",
+            target: "https://gramafund.vercel.app/posts?openModal=true",
+          },
+        ],
+        postUrl: "https://gramafund.vercel.app/posts",
+      }),
+    );
     document.head.appendChild(meta);
 
     return () => {
       document.head.removeChild(meta);
     };
-  }, []); 
+  }, []);
 
   if (isLoading && !posts.length) {
     return (
@@ -59,13 +66,8 @@ export default function Home() {
   if (isError) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-4">
-        <p className="text-red-500 mb-4">
-          Temporarily unable to load posts
-        </p>
-        <Button 
-          onClick={() => refresh()}
-          variant="outline"
-        >
+        <p className="text-red-500 mb-4">Temporarily unable to load posts</p>
+        <Button onClick={() => refresh()} variant="outline">
           Try Again
         </Button>
       </div>
@@ -104,10 +106,42 @@ export default function Home() {
       </div>
 
       {/* Cast Modal */}
-      <CastModal 
-        open={isModalOpen} 
-        onOpenChange={setIsModalOpen}
-      />
+      <CastModal open={isModalOpen} onOpenChange={setIsModalOpen} />
     </>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center p-4">
+      <p>Loading posts...</p>
+    </div>
+  );
+}
+
+interface ErrorFallbackProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center p-4">
+      <p className="text-red-500 mb-4">Something went wrong:</p>
+      <pre className="mb-4">{error.message}</pre>
+      <Button onClick={resetErrorBoundary} variant="outline">
+        Try Again
+      </Button>
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <Suspense fallback={<LoadingState />}>
+        <PostsContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
