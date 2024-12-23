@@ -1,5 +1,12 @@
 const nextConfig = {
-  /* config options here */
+  async rewrites() {
+      return [
+        {
+          source: '/.well-known/farcaster.json',
+          destination: '/api/farcaster-manifest',
+        },
+      ];
+    },
 };
 
 export default nextConfig;
