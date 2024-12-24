@@ -15,7 +15,7 @@ export async function GET() {
       frame: {
         version: "1",
         name: "Gramafund",
-        iconUrl: `${appUrl}/image.png`,
+        iconUrl: `${appUrl}/icon.png`,
         homeUrl: `${appUrl}/frame`,
         imageUrl: `${appUrl}/image.png`,
         buttonTitle: "All posts",
