@@ -13,7 +13,6 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
   const [isFrame, setIsFrame] = useState(false);
 
   useEffect(() => {
-    // Check if we're in a frame context and try to authenticate
     const checkFrameAndAuth = async () => {
       try {
         const frameSDK = await import('@farcaster/frame-sdk');
@@ -22,18 +21,21 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
         if (context?.client?.clientFid) {
           setIsFrame(true);
           
-          // Handle frame authentication
           const response = await fetch('/api/frame/auth', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              fid: context.client.clientFid,
-              context: context
+              untrustedData: {
+                fid: context.client.clientFid,
+                url: window.location.href,
+                buttonIndex: 1,
+                inputText: ""
+              }
             }),
           });
-
+  
           if (!response.ok) {
             throw new Error('Frame authentication failed');
           }
@@ -47,7 +49,7 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
         });
       }
     };
-
+  
     checkFrameAndAuth();
   }, [toast]);
 

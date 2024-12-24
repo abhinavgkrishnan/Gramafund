@@ -12,12 +12,11 @@ const frame = {
   buttons: [
     {
       label: "Connect Account",
+      action: "post" // Make sure to specify the action type
     }
   ],
   postUrl: `${appUrl}/api/frame/auth`,
 };
-
-export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -32,6 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
       "fc:frame:image": frame.image.src,
       "fc:frame:image:aspect_ratio": frame.image.aspectRatio,
       "fc:frame:button:1": frame.buttons[0].label,
+      "fc:frame:button:1:action": "post",
       "fc:frame:post_url": frame.postUrl,
     },
   };
