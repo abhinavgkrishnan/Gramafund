@@ -8,47 +8,48 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Demo({ title = "Gramafund" }: { title?: string }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useNeynarContext();
+  const { isAuthenticated, user } = useNeynarContext();
   const { toast } = useToast();
   const [isFrame, setIsFrame] = useState(false);
-  const [fid, setFid] = useState<number | null>(null);
 
   useEffect(() => {
-    const checkFrame = async () => {
+    // Check if we're in a frame context and try to authenticate
+    const checkFrameAndAuth = async () => {
       try {
-        const frameSDK = (await import("@farcaster/frame-sdk")).default;
-        const context = await frameSDK.context;
-
-        if (context?.client.clientFid) {
+        const frameSDK = await import('@farcaster/frame-sdk');
+        const context = await frameSDK.default.context;
+        
+        if (context?.client?.clientFid) {
           setIsFrame(true);
-          setFid(context.client.clientFid);
+          
+          // Handle frame authentication
+          const response = await fetch('/api/frame/auth', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              fid: context.client.clientFid,
+              context: context
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Frame authentication failed');
+          }
         }
       } catch (error) {
-        console.error("Frame check error:", error);
+        console.error('Frame auth error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to authenticate with frame.",
+          variant: "destructive",
+        });
       }
     };
 
-    checkFrame();
-  }, []);
-
-  const handleSignIn = () => {
-    if (!isFrame) {
-      window.open(
-        `https://warpcast.com/~/sign-in?platform=gramafund`,
-        '_blank'
-      );
-    } else {
-      toast({
-        title: "Authentication Error",
-        description: "Please use Warpcast to sign in",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleViewPosts = () => {
-    router.push("/posts");
-  };
+    checkFrameAndAuth();
+  }, [toast]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 space-y-4">
@@ -56,16 +57,16 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
 
       <div className="p-6 bg-card rounded-lg shadow-lg max-w-md w-full space-y-4">
         <div className="text-center">
-          {isFrame ? (
+          {isAuthenticated ? (
             <>
               <h2 className="text-xl font-semibold text-green-500 mb-2">
                 🎉 Connected to Gramafund
               </h2>
-              <p className="text-muted-foreground">FID: {fid}</p>
+              <p className="text-muted-foreground">FID: {user?.fid}</p>
             </>
           ) : (
             <h2 className="text-xl font-semibold text-yellow-500">
-              Welcome to Gramafund
+              {isFrame ? "Connecting..." : "Please connect your account"}
             </h2>
           )}
         </div>
@@ -74,7 +75,7 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
           <div className="flex flex-col gap-2">
             {isAuthenticated ? (
               <>
-                <Button onClick={handleViewPosts} variant="default">
+                <Button onClick={() => router.push("/posts")} variant="default">
                   View Posts
                 </Button>
                 <Button
@@ -85,13 +86,15 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={handleSignIn} 
-                variant="default"
-                className="w-full"
-              >
-                Sign in with Warpcast
-              </Button>
+              !isFrame && (
+                <Button 
+                  data-action="post"
+                  variant="default"
+                  className="w-full"
+                >
+                  Connect Account
+                </Button>
+              )
             )}
           </div>
         </div>

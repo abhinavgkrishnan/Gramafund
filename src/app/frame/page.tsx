@@ -4,18 +4,17 @@ import App from "./app";
 const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "next", // Keep as "1" since you're using verified domain
-  imageUrl: `${appUrl}/image.png`,
-  button: {
-    title: "Launch Gramafund",
-    action: {
-      type: "launch_frame",
-      name: "Gramafund",
-      url: `${appUrl}/frame`, // Where you want users to land
-      splashImageUrl: `${appUrl}/image.png`,
-      splashBackgroundColor: "#131313",
-    },
+  version: "next",
+  image: {
+    src: `${appUrl}/image.png`,
+    aspectRatio: "1.91:1"
   },
+  buttons: [
+    {
+      label: "Connect Account",
+    }
+  ],
+  postUrl: `${appUrl}/api/frame/auth`,
 };
 
 export const revalidate = 300;
@@ -29,7 +28,11 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [`${appUrl}/image.png`],
     },
     other: {
-      "fc:frame": JSON.stringify(frame),
+      "fc:frame": "next",
+      "fc:frame:image": frame.image.src,
+      "fc:frame:image:aspect_ratio": frame.image.aspectRatio,
+      "fc:frame:button:1": frame.buttons[0].label,
+      "fc:frame:post_url": frame.postUrl,
     },
   };
 }
