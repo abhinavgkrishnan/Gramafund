@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useNeynarContext } from "@neynar/react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Demo({ title = "Gramafund" }: { title?: string }) {
   const router = useRouter();
-  const { user } = useNeynarContext();
+  const { user, isAuthenticated } = useNeynarContext();
+  const { toast } = useToast();
   const [isFrame, setIsFrame] = useState(false);
   const [fid, setFid] = useState<number | null>(null);
 
@@ -28,6 +30,21 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
 
     checkFrame();
   }, []);
+
+  const handleSignIn = () => {
+    if (!isFrame) {
+      window.open(
+        `https://warpcast.com/~/sign-in?platform=gramafund`,
+        '_blank'
+      );
+    } else {
+      toast({
+        title: "Authentication Error",
+        description: "Please use Warpcast to sign in",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleViewPosts = () => {
     router.push("/posts");
@@ -55,15 +72,25 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
 
         <div className="space-y-2">
           <div className="flex flex-col gap-2">
-            <Button onClick={handleViewPosts} variant="default">
-              View Posts
-            </Button>
-            {user && (
-              <Button
-                onClick={() => router.push("/posts?openModal=true")}
-                variant="outline"
+            {isAuthenticated ? (
+              <>
+                <Button onClick={handleViewPosts} variant="default">
+                  View Posts
+                </Button>
+                <Button
+                  onClick={() => router.push("/posts?openModal=true")}
+                  variant="outline"
+                >
+                  Create Post
+                </Button>
+              </>
+            ) : (
+              <Button 
+                onClick={handleSignIn} 
+                variant="default"
+                className="w-full"
               >
-                Create Post
+                Sign in with Warpcast
               </Button>
             )}
           </div>
