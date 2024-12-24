@@ -4,7 +4,7 @@ import { NeynarAPIClient, isApiErrorResponse } from "@neynar/nodejs-sdk";
 const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
 const CHANNELS = {
-  gramafund: "https://gramafund.vercel.app",
+  gramafund: "https://gramafund.vercel.app/frame",
 } as const;
 
 export async function POST(request: NextRequest) {

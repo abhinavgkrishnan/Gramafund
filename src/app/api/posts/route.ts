@@ -5,37 +5,51 @@ const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const PARENT_URLS = [
+  "https://gramafund.vercel.app",
+  "https://gramafund.vercel.app/frame"
+];
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const cursor = searchParams.get("cursor");
 
     console.log("Making request to Neynar...", { cursor });
-
+    
     for (let i = 0; i < 3; i++) {
       try {
-        const response = await client.fetchFeed({
-          feedType: "filter",
-          filterType: "parent_url",
-          parentUrl: "https://gramafund.vercel.app",
-          limit: 25,
-          cursor: cursor || undefined,
-        });
+        // Fetch from both URLs
+        const responses = await Promise.all(
+          PARENT_URLS.map(url => 
+            client.fetchFeed({
+              feedType: "filter",
+              filterType: "parent_url",
+              parentUrl: url,
+              limit: 25,
+              cursor: cursor || undefined,
+            })
+          )
+        );
 
-        const posts = response.casts
+        // Combine and deduplicate posts
+        const allCasts = responses.flatMap(response => response.casts);
+        const uniqueCasts = allCasts.filter((cast, index) => 
+          allCasts.findIndex(c => c.hash === cast.hash) === index
+        );
+
+        const posts = uniqueCasts
           .map((cast) => {
             const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
             const descriptionMatch = cast.text.match(
-              /\[description\]\s*(.*?)(?=\s*\[|$)/,
+              /\[description\]\s*(.*?)(?=\s*\[|$)/
             );
             const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
 
-            // If any of the required fields are missing, return null
             if (!titleMatch?.[1] || !descriptionMatch?.[1] || !typeMatch?.[1]) {
               return null;
             }
 
-            // Validate type is one of the allowed values
             const validTypes = ["Project", "Comment", "Reaction", "Funding"];
             const type = typeMatch[1].trim();
             if (!validTypes.includes(type)) {
@@ -54,16 +68,21 @@ export async function GET(request: Request) {
               tags: [],
             };
           })
-          .filter((post): post is NonNullable<typeof post> => post !== null); // Type guard to filter out null values
+          .filter((post): post is NonNullable<typeof post> => post !== null);
+
+        // Get the earliest cursor
+        const nextCursor = responses
+          .map(response => response.next?.cursor)
+          .filter(Boolean)[0];
 
         return NextResponse.json({
           posts,
-          nextCursor: response.next?.cursor,
+          nextCursor,
         });
       } catch (error) {
         console.log(
           `Attempt ${i + 1} failed, retrying in ${(i + 1) * 1000}ms...`,
-          error,
+          error
         );
         await wait((i + 1) * 1000);
       }
@@ -77,7 +96,7 @@ export async function GET(request: Request) {
         error: "API temporarily unavailable",
         message: "Please try again in a few moments",
       },
-      { status: 503 },
+      { status: 503 }
     );
   }
 }
