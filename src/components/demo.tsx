@@ -39,6 +39,17 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
           if (!response.ok) {
             throw new Error('Frame authentication failed');
           }
+
+          const data = await response.json();
+          
+          if (data.success) {
+            toast({
+              title: "Authentication Successful",
+              description: "You're now connected to Gramafund!",
+            });
+          } else {
+            throw new Error('Authentication failed');
+          }
         }
       } catch (error) {
         console.error('Frame auth error:', error);

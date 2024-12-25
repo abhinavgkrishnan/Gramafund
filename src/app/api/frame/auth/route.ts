@@ -1,18 +1,27 @@
 import { NextResponse, NextRequest } from "next/server";
-// import { NeynarAPIClient } from "@neynar/nodejs-sdk";
+import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 
-// const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
+const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
 export async function POST(request: NextRequest) {
   try {
     const { untrustedData } = await request.json();
+    console.log("Frame auth request:", untrustedData);
 
-    console.log("Frame auth request:", untrustedData); // For debugging
+    const signerResponse = await client.lookupSigner(untrustedData.fid);
+    
+    if (!signerResponse) {
+      return NextResponse.json(
+        { message: "Invalid FID" },
+        { status: 400 }
+      );
+    }
 
-    // For now, just return success with the FID
+    // This will give us the signer information needed for authentication
     return NextResponse.json({
       success: true,
-      fid: untrustedData.fid
+      fid: untrustedData.fid,
+      signer: signerResponse
     }, { status: 200 });
 
   } catch (err) {
