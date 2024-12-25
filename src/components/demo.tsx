@@ -1,96 +1,18 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { signIn, getCsrfToken, signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import sdk from "@farcaster/frame-sdk";
-import { SignIn as SignInCore } from "@farcaster/frame-core";
 
 export default function Demo({ title = "Gramafund" }: { title?: string }) {
   const router = useRouter();
   const { toast } = useToast();
   const [isFrame, setIsFrame] = useState(false);
-  const [signingIn, setSigningIn] = useState(false);
+  const [signingIn] = useState(false);
   const { data: session, status } = useSession();
-
-  const getNonce = useCallback(async () => {
-    const nonce = await getCsrfToken();
-    if (!nonce) throw new Error("Unable to generate nonce");
-    return nonce;
-  }, []);
-
-  const handleSignIn = useCallback(async () => {
-    try {
-      setSigningIn(true);
-      const nonce = await getNonce();
-      console.log("Got nonce:", nonce);
-
-      // Check if we're in a Frame context
-      const context = await sdk.context;
-      if (!context?.client?.clientFid) {
-        throw new Error("Not in a Frame context or Frame not connected");
-      }
-
-      // Try to sign in with Frame SDK - remove the domain option
-      const result = await sdk.actions.signIn({ nonce });
-
-      if (!result?.message || !result?.signature) {
-        throw new Error("Failed to get signature from Frame");
-      }
-
-      console.log("Frame sign-in result:", result);
-
-      const signInResponse = await signIn("credentials", {
-        message: result.message,
-        signature: result.signature,
-        redirect: false,
-        callbackUrl: "/",
-      });
-
-      if (signInResponse?.error) {
-        throw new Error(signInResponse.error);
-      }
-
-      toast({
-        title: "Success",
-        description: "Successfully signed in with Farcaster",
-      });
-    } catch (error: unknown) {
-      console.error("Sign-in error:", error);
-
-      let errorMessage = "An unknown error occurred";
-
-      if (error instanceof SignInCore.RejectedByUser) {
-        errorMessage = "Rejected by user";
-      } else if (error instanceof Error) {
-        if (error.message.includes("Frame not connected")) {
-          errorMessage =
-            "Please open this page in Warpcast or a compatible Frame app";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      toast({
-        title: "Sign-in Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setSigningIn(false);
-    }
-  }, [getNonce, toast]);
-
-  const handleSignOut = useCallback(async () => {
-    await signOut({ redirect: false });
-    toast({
-      title: "Signed Out",
-      description: "Successfully signed out",
-    });
-  }, [toast]);
 
   useEffect(() => {
     const checkFrameAndAuth = async () => {
@@ -98,6 +20,37 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
         const context = await sdk.context;
         if (context?.client?.clientFid) {
           setIsFrame(true);
+          
+          // Create frame data without relying on message property
+          const frameData = {
+            untrustedData: {
+              fid: context.client.clientFid,
+              url: window.location.href,
+              network: 1,
+              buttonIndex: 1,
+              inputText: "",
+            },
+            trustedData: {
+              messageBytes: null, // This will be provided by the frame itself
+            },
+          };
+
+          // Validate the frame interaction
+          const response = await fetch('/api/frame', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(frameData),
+          });
+
+          if (!response.ok) {
+            throw new Error('Frame validation failed');
+          }
+
+          // Handle successful validation
+          const data = await response.json();
+          console.log('Validation successful:', data);
         }
       } catch (error) {
         console.error("Frame auth error:", error);
@@ -123,7 +76,7 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
               <h2 className="text-xl font-semibold text-green-500 mb-2">
                 🎉 Connected to Gramafund
               </h2>
-              <p className="text-muted-foreground">FID: {session?.user?.fid}</p>
+              <p className="text-muted-foreground">FID: {session?.user?.name}</p>
             </>
           ) : (
             <h2 className="text-xl font-semibold text-yellow-500">
@@ -145,18 +98,12 @@ export default function Demo({ title = "Gramafund" }: { title?: string }) {
                 >
                   Create Post
                 </Button>
-                <Button onClick={handleSignOut} variant="destructive">
-                  Sign Out
-                </Button>
               </>
             ) : (
               <Button
-                onClick={handleSignIn}
-                disabled={signingIn}
                 variant="default"
-                className="w-full"
               >
-                {signingIn ? "Signing in..." : "Sign in with Farcaster"}
+                {signingIn ? "Signing in..." : "Connect Account"}
               </Button>
             )}
           </div>
