@@ -5,6 +5,17 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+export const metadata = {
+  title: "Grama Fund",
+  description: "Cast from a frame!",
+  other: {
+    "fc:frame": "next",
+    "fc:frame:image": `${process.env.HOST || "https://gramafund.vercel.app"}/api/og`,
+    "fc:frame:button:1": "Start",
+    "fc:frame:post_url": `${process.env.HOST || "https://gramafund.vercel.app"}/frame`,
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -12,6 +23,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="farcaster-frame-manifest" href="/api/farcaster-manifest" />
+      </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>
       </body>
