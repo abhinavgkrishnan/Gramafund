@@ -3,6 +3,8 @@ import { createFrames } from "frames.js/next";
 const frames = createFrames();
 const HOST = process.env.HOST || "https://gramafund.vercel.app";
 
+const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"];
+
 const handler = frames(async () => {
   return {
     image: (
@@ -17,21 +19,14 @@ const handler = frames(async () => {
           color: "white",
         }}
       >
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "48px" }}>Create a Post</div>
-          <div style={{ fontSize: "24px", marginTop: "20px" }}>
-            Project • Comment • Reaction • Funding
-          </div>
-        </div>
+        <div style={{ fontSize: "48px" }}>Select Post Type</div>
       </div>
     ),
-    buttons: [
-      {
-        label: "Start Posting",
-        action: "post" as const,
-        target: `${HOST}/api/frame/post-type`,
-      },
-    ],
+    buttons: POST_TYPES.map((type) => ({
+      label: type,
+      action: "post" as const,
+      target: `${HOST}/api/frame/create-post?type=${type}`,
+    })),
   };
 });
 
