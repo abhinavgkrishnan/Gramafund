@@ -45,4 +45,3 @@ const handleRequest = frames(async (payload) => {
 
 export const GET = handleRequest;
 export const POST = handleRequest;
-
