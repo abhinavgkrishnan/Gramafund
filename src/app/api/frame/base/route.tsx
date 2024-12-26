@@ -12,7 +12,7 @@ const handleRequest = frames(async () => {
       </div>
     ),
     buttons: [
-      <Button action="post" key="start" target={`${HOST}/frame/start`}>
+      <Button action="post" key="start" target={`${HOST}/api/frame/start`}>
         Start
       </Button>,
     ],
