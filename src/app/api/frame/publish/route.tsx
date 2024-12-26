@@ -14,8 +14,8 @@ const handler = frames(async (ctx) => {
       throw new Error("Missing required information");
     }
 
-    // Find user with their signer
-    const user = await prisma.user.findUnique({
+    // Find or create user with their signer
+    let user = await prisma.user.findUnique({
       where: { fid: String(fid) },
     });
 
@@ -23,56 +23,18 @@ const handler = frames(async (ctx) => {
       // Create new signer if user doesn't exist
       const signer = await neynarClient.createSigner();
 
-      await prisma.user.create({
+      user = await prisma.user.create({
         data: {
           fid: String(fid),
           signerUUID: signer.signer_uuid,
         },
       });
-
-      // Use the new signer
-      const response = await neynarClient.publishCast({
-        signerUuid: signer.signer_uuid,
-        text: text,
-        parent: `${HOST}/frame`,
-      });
-
-      return {
-        image: (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              height: "100%",
-              backgroundColor: "black",
-              color: "white",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "48px" }}>Posted Successfully! 🎉</div>
-              <div style={{ fontSize: "24px", marginTop: "20px" }}>
-                {response.cast.hash}
-              </div>
-            </div>
-          </div>
-        ),
-        buttons: [
-          {
-            label: "Create Another",
-            action: "post" as const,
-            target: `${HOST}/api/frame/base`,
-          },
-        ],
-      };
     }
 
-    // Use existing signer
-    const response = await neynarClient.publishCast({
+    // Publish cast with user's signer
+    const cast = await neynarClient.publishCast({
       signerUuid: user.signerUUID,
       text: text,
-      parent: `${HOST}/frame`,
     });
 
     return {
@@ -89,18 +51,18 @@ const handler = frames(async (ctx) => {
           }}
         >
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "48px" }}>Posted Successfully! 🎉</div>
+            <div style={{ fontSize: "48px" }}>Cast Success! 🎉</div>
             <div style={{ fontSize: "24px", marginTop: "20px" }}>
-              {response.cast.hash}
+              {cast.cast.hash}
             </div>
           </div>
         </div>
       ),
       buttons: [
         {
-          label: "Create Another",
+          label: "Cast Again",
           action: "post" as const,
-          target: `${HOST}/api/frame/base`,
+          target: `${HOST}/frame`,
         },
       ],
     };
@@ -119,14 +81,14 @@ const handler = frames(async (ctx) => {
             color: "white",
           }}
         >
-          <div style={{ fontSize: "48px" }}>Error Publishing Post</div>
+          <div style={{ fontSize: "48px" }}>Error Publishing Cast</div>
         </div>
       ),
       buttons: [
         {
           label: "Try Again",
           action: "post" as const,
-          target: `${HOST}/api/frame/base`,
+          target: `${HOST}/frame`,
         },
       ],
     };

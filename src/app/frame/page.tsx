@@ -1,33 +1,32 @@
 import { Metadata } from "next";
-import App from "./app";
 
-const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
+const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const frame = {
   version: "next",
-  imageUrl: `${appUrl}/api/frame/base`,
+  imageUrl: `${appUrl}/image.png`,
   buttons: [
     {
-      title: "Start Posting",
+      title: "Cast",
       action: {
         type: "post",
-        url: `${appUrl}/api/frame/post-type`,
+        url: `${appUrl}/api/frame/publish`,
       },
-    }
+    },
   ],
   input: {
-    text: "What's on your mind?",
+    text: "What would you like to cast?",
   },
-  postUrl: `${appUrl}/api/frame/post-type`,
+  postUrl: `${appUrl}/api/frame/publish`,
 };
 
 export const metadata: Metadata = {
   title: "Gramafund",
-  description: "Create posts on Gramafund",
+  description: "Cast on Gramafund",
   openGraph: {
     title: "Gramafund",
-    description: "Create posts on Gramafund",
-    images: [`${appUrl}/api/frame/base`],
+    description: "Cast on Gramafund",
+    images: [`${appUrl}/image.png`],
   },
   other: {
     "fc:frame": JSON.stringify(frame),
@@ -35,5 +34,11 @@ export const metadata: Metadata = {
 };
 
 export default function FramePage() {
-  return <App />;
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-24">
+      <h1 className="text-4xl font-bold mb-8">Gramafund Frame</h1>
+      <p className="text-lg mb-4">Test this frame URL:</p>
+      <code className="bg-gray-100 p-2 rounded">{appUrl}/frame</code>
+    </div>
+  );
 }
