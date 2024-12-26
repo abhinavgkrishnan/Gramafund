@@ -10,9 +10,9 @@ export const metadata = {
   description: "Cast from a frame!",
   other: {
     "fc:frame": "next",
-    "fc:frame:image": `${process.env.HOST || "https://gramafund.vercel.app"}/api/og`,
+    "fc:frame:image": `${process.env.HOST || "https://gramafund.vercel.app"}/api/frame/base`,
     "fc:frame:button:1": "Start",
-    "fc:frame:post_url": `${process.env.HOST || "https://gramafund.vercel.app"}/frame`,
+    "fc:frame:post_url": `${process.env.HOST || "https://gramafund.vercel.app"}/api/frame/start`,
   },
 };
 

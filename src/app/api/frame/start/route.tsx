@@ -35,7 +35,7 @@ const handleRequest = frames(async (payload) => {
       </div>
     ),
     buttons: [
-      <Button action="post" key="login" target={`${HOST}/frame/publish`}>
+      <Button action="post" key="login" target={`${HOST}/api/frame/publish`}>
         Cast
       </Button>,
     ],
