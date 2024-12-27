@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import App from "./app";
 
 const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
@@ -11,7 +10,7 @@ const frame = {
     action: {
       type: "launch_frame",
       name: "Gramafund",
-      url: `${appUrl}/frame`,
+      url: `${appUrl}/api/frame/base`, // Point directly to base route
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
@@ -35,5 +34,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function FramePage() {
-  return <App />;
+  // Return minimal UI or nothing
+  return null;
 }
