@@ -1,16 +1,16 @@
 import { Metadata } from "next";
 import App from "./app";
 
-const appUrl = process.env.HOST || "https://gramafund.vercel.app";
+const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "next", // Keep this as it was working
+  version: "next",
   imageUrl: `${appUrl}/image.png`,
   button: {
-    title: "Create Post",
+    title: "Launch Gramafund",
     action: {
-      type: "post", // Changed from launch_frame since we're handling posts
-      name: "Gramafund Post",
+      type: "launch_frame" as const, // Must be launch_frame for initial frame
+      name: "Gramafund",
       url: `${appUrl}/api/frame/base`,
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
@@ -29,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [`${appUrl}/image.png`],
     },
     other: {
-      "fc:frame": JSON.stringify(frame), // Keep the JSON.stringify as it was working
+      "fc:frame": JSON.stringify(frame),
     },
   };
 }
