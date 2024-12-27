@@ -1,45 +1,44 @@
 import { createFrames } from "frames.js/next";
 
 const frames = createFrames();
-const HOST = process.env.HOST || "https://gramafund.vercel.app";
+const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const handler = frames(
   async ({ searchParams }: { searchParams: Record<string, string> }) => {
     const type = searchParams["type"];
 
-    return {
-      image: (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "black",
-            color: "white",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "48px" }}>Create {type}</div>
-            <div style={{ fontSize: "24px", marginTop: "20px" }}>
-              Enter your post content
-            </div>
-          </div>
-        </div>
-      ),
-      buttons: [
-        {
-          label: "Post",
-          action: "post" as const,
-          target: `${HOST}/api/frame/publish`,
+    const frame = {
+      version: "next",
+      imageUrl: `${appUrl}/image.png`,
+      button: {
+        title: "Post",
+        action: {
+          type: "post",
+          name: "Gramafund Publish",
+          url: `${appUrl}/api/frame/publish`,
+          splashImageUrl: `${appUrl}/image.png`,
+          splashBackgroundColor: "#131313",
         },
-      ],
+      },
       input: {
         text: `Type your ${type?.toLowerCase() || ""} details here...`,
       },
     };
-  },
+
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta property="fc:frame" content='${JSON.stringify(frame)}' />
+        </head>
+      </html>`,
+      {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      }
+    );
+  }
 );
 
 export const GET = handler;

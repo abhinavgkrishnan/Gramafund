@@ -1,44 +1,39 @@
 import { Metadata } from "next";
+import App from "./app";
 
 const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "next",
+  version: "next", // Keep this as it was working
   imageUrl: `${appUrl}/image.png`,
-  buttons: [
-    {
-      title: "Cast",
-      action: {
-        type: "post",
-        url: `${appUrl}/api/frame/publish`,
-      },
+  button: {
+    title: "Create Post",
+    action: {
+      type: "post", // Changed from launch_frame since we're handling posts
+      name: "Gramafund Post",
+      url: `${appUrl}/api/frame/base`,
+      splashImageUrl: `${appUrl}/image.png`,
+      splashBackgroundColor: "#131313",
     },
-  ],
-  input: {
-    text: "What would you like to cast?",
   },
-  postUrl: `${appUrl}/api/frame/publish`,
 };
 
-export const metadata: Metadata = {
-  title: "Gramafund",
-  description: "Cast on Gramafund",
-  openGraph: {
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
     title: "Gramafund",
-    description: "Cast on Gramafund",
-    images: [`${appUrl}/image.png`],
-  },
-  other: {
-    "fc:frame": JSON.stringify(frame),
-  },
-};
+    openGraph: {
+      title: "Gramafund",
+      description: "Create a post on Gramafund",
+      images: [`${appUrl}/image.png`],
+    },
+    other: {
+      "fc:frame": JSON.stringify(frame), // Keep the JSON.stringify as it was working
+    },
+  };
+}
 
 export default function FramePage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-8">Gramafund Frame</h1>
-      <p className="text-lg mb-4">Test this frame URL:</p>
-      <code className="bg-gray-100 p-2 rounded">{appUrl}/frame</code>
-    </div>
-  );
+  return <App />;
 }

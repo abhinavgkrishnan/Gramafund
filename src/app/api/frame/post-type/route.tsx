@@ -1,33 +1,39 @@
 import { createFrames } from "frames.js/next";
 
 const frames = createFrames();
-const HOST = process.env.HOST || "https://gramafund.vercel.app";
+const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"];
 
 const handler = frames(async () => {
-  return {
-    image: (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          height: "100%",
-          backgroundColor: "black",
-          color: "white",
-        }}
-      >
-        <div style={{ fontSize: "48px" }}>Select Post Type</div>
-      </div>
-    ),
+  const frame = {
+    version: "next",
+    imageUrl: `${appUrl}/image.png`,
     buttons: POST_TYPES.map((type) => ({
-      label: type,
-      action: "post" as const,
-      target: `${HOST}/api/frame/create-post?type=${type}`,
+      title: type,
+      action: {
+        type: "post",
+        name: `Gramafund ${type}`,
+        url: `${appUrl}/api/frame/create-post?type=${type}`,
+        splashImageUrl: `${appUrl}/image.png`,
+        splashBackgroundColor: "#131313",
+      },
     })),
   };
+
+  return new Response(
+    `<!DOCTYPE html>
+    <html>
+      <head>
+        <meta property="fc:frame" content='${JSON.stringify(frame)}' />
+      </head>
+    </html>`,
+    {
+      headers: {
+        "Content-Type": "text/html",
+      },
+    },
+  );
 });
 
 export const GET = handler;

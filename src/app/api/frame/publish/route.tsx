@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import neynarClient from "@/lib/neynarClient";
 
 const frames = createFrames();
-const HOST = process.env.HOST || "https://gramafund.vercel.app";
+const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const handler = frames(async (ctx) => {
   try {
@@ -14,15 +14,12 @@ const handler = frames(async (ctx) => {
       throw new Error("Missing required information");
     }
 
-    // Find or create user with their signer
     let user = await prisma.user.findUnique({
       where: { fid: String(fid) },
     });
 
     if (!user) {
-      // Create new signer if user doesn't exist
       const signer = await neynarClient.createSigner();
-
       user = await prisma.user.create({
         data: {
           fid: String(fid),
@@ -31,67 +28,71 @@ const handler = frames(async (ctx) => {
       });
     }
 
-    // Publish cast with user's signer
-    const cast = await neynarClient.publishCast({
-      signerUuid: user.signerUUID,
-      text: text,
-    });
+    // Uncomment when ready to publish
+    // const cast = await neynarClient.publishCast({
+    //   signerUuid: user.signerUUID,
+    //   text: text,
+    // });
 
-    return {
-      image: (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "black",
-            color: "white",
-          }}
-        >
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "48px" }}>Cast Success! 🎉</div>
-            <div style={{ fontSize: "24px", marginTop: "20px" }}>
-              {cast.cast.hash}
-            </div>
-          </div>
-        </div>
-      ),
-      buttons: [
-        {
-          label: "Cast Again",
-          action: "post" as const,
-          target: `${HOST}/frame`,
+    const successFrame = {
+      version: "next",
+      imageUrl: `${appUrl}/image.png`,
+      button: {
+        title: "Cast Again",
+        action: {
+          type: "post",
+          name: "Gramafund New Post",
+          url: `${appUrl}/frame`,
+          splashImageUrl: `${appUrl}/image.png`,
+          splashBackgroundColor: "#131313",
         },
-      ],
+      },
     };
+
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta property="fc:frame" content='${JSON.stringify(successFrame)}' />
+        </head>
+      </html>`,
+      {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      },
+    );
   } catch (error) {
     console.error("Error publishing:", error);
-    return {
-      image: (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "black",
-            color: "white",
-          }}
-        >
-          <div style={{ fontSize: "48px" }}>Error Publishing Cast</div>
-        </div>
-      ),
-      buttons: [
-        {
-          label: "Try Again",
-          action: "post" as const,
-          target: `${HOST}/frame`,
+
+    const errorFrame = {
+      version: "next",
+      imageUrl: `${appUrl}/image.png`,
+      button: {
+        title: "Try Again",
+        action: {
+          type: "post",
+          name: "Gramafund Retry",
+          url: `${appUrl}/frame`,
+          splashImageUrl: `${appUrl}/image.png`,
+          splashBackgroundColor: "#131313",
         },
-      ],
+      },
     };
+
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta property="fc:frame" content='${JSON.stringify(errorFrame)}' />
+        </head>
+      </html>`,
+      {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      },
+    );
   }
 });
 
