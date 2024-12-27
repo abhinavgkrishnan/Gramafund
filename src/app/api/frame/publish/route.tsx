@@ -34,25 +34,32 @@ const handler = frames(async (ctx) => {
     //   text: text,
     // });
 
+    // Success response
     return new Response(
       `<!DOCTYPE html>
       <html>
         <head>
           <meta property="fc:frame" content="next" />
           <meta property="fc:frame:image" content="${appUrl}/image.png" />
-          <meta property="fc:frame:button:1" content="Post Again" />
+          <meta property="fc:frame:button:1" content="Post Another" />
           <meta property="fc:frame:button:1:action" content="post" />
-          <meta property="fc:frame:post_url" content="${appUrl}/api/frame/create-post" />
+          <meta property="fc:frame:post_url" content="${appUrl}/frame/create" />
         </head>
+        <body>
+          <h1>Post Created Successfully!</h1>
+        </body>
       </html>`,
       {
         headers: {
           "Content-Type": "text/html",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
-      },
+      }
     );
   } catch (error) {
     console.error("Error publishing:", error);
+    
+    // Error response
     return new Response(
       `<!DOCTYPE html>
       <html>
@@ -61,14 +68,18 @@ const handler = frames(async (ctx) => {
           <meta property="fc:frame:image" content="${appUrl}/image.png" />
           <meta property="fc:frame:button:1" content="Try Again" />
           <meta property="fc:frame:button:1:action" content="post" />
-          <meta property="fc:frame:post_url" content="${appUrl}/api/frame/create-post" />
+          <meta property="fc:frame:post_url" content="${appUrl}/frame/create" />
         </head>
+        <body>
+          <h1>Error Creating Post</h1>
+        </body>
       </html>`,
       {
         headers: {
           "Content-Type": "text/html",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
-      },
+      }
     );
   }
 });

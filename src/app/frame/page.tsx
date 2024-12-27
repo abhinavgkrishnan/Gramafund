@@ -10,7 +10,7 @@ const frame = {
     action: {
       type: "launch_frame",
       name: "Gramafund",
-      url: `${appUrl}/api/frame/base`, // Point directly to base route
+      url: `${appUrl}/frame/create`, // Point to a new page
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
@@ -34,6 +34,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function FramePage() {
-  // Return minimal UI or nothing
-  return null;
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 className="text-3xl font-bold mb-4">Welcome to Gramafund</h1>
+      <p className="text-center text-gray-600">
+        Create and manage posts on Farcaster
+      </p>
+    </div>
+  );
 }
