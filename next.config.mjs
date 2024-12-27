@@ -1,6 +1,4 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@farcaster/auth-client", "@farcaster/auth-kit", "siwe"],
   async rewrites() {
     return [
       {

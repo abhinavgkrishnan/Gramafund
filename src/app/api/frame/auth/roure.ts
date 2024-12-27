@@ -10,18 +10,16 @@ export async function POST(request: NextRequest) {
     console.log("Frame auth request:", untrustedData); // For debugging
 
     // For now, just return success with the FID
-    return NextResponse.json(
-      {
-        success: true,
-        fid: untrustedData.fid,
-      },
-      { status: 200 },
-    );
+    return NextResponse.json({
+      success: true,
+      fid: untrustedData.fid
+    }, { status: 200 });
+
   } catch (err) {
     console.error("/api/frame/auth error:", err);
     return NextResponse.json(
       { message: "Authentication failed" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
