@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import App from "./app";
 
-const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
+const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const frame = {
   version: "next",
