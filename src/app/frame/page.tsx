@@ -1,36 +1,39 @@
 import { Metadata } from "next";
 import App from "./app";
 
-const appUrl = process.env.HOST || "https://gramafund.vercel.app";
+const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "next",
+  version: "next", // Keep as "1" since you're using verified domain
   imageUrl: `${appUrl}/image.png`,
   button: {
-    title: "Connect Account",
+    title: "Launch Gramafund",
     action: {
-      type: "post",
+      type: "launch_frame",
       name: "Gramafund",
-      url: `${appUrl}/frame`,
+      url: `${appUrl}/posts`, // Where you want users to land
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
   },
 };
 
-export const metadata: Metadata = {
-  title: "Gramafund",
-  description: "Connect with Gramafund",
-  openGraph: {
+export const revalidate = 300;
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
     title: "Gramafund",
-    description: "Connect with Gramafund",
-    images: [`${appUrl}/image.png`],
-  },
-  other: {
-    "fc:frame": JSON.stringify(frame),
-  },
-};
+    openGraph: {
+      title: "Gramafund",
+      description: "Connect with Gramafund",
+      images: [`${appUrl}/image.png`],
+    },
+    other: {
+      "fc:frame": JSON.stringify(frame),
+    },
+  };
+}
 
 export default function FramePage() {
-  return <App title="Gramafund" />;
+  return <App />;
 }

@@ -4,7 +4,7 @@ export const revalidate = 3600;
 
 export async function GET() {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
+    const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
     const config = {
       accountAssociation: {
