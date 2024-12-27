@@ -34,26 +34,15 @@ const handler = frames(async (ctx) => {
     //   text: text,
     // });
 
-    const successFrame = {
-      version: "next",
-      imageUrl: `${appUrl}/image.png`,
-      button: {
-        title: "Cast Again",
-        action: {
-          type: "post",
-          name: "Gramafund New Post",
-          url: `${appUrl}/frame`,
-          splashImageUrl: `${appUrl}/image.png`,
-          splashBackgroundColor: "#131313",
-        },
-      },
-    };
-
     return new Response(
       `<!DOCTYPE html>
       <html>
         <head>
-          <meta property="fc:frame" content='${JSON.stringify(successFrame)}' />
+          <meta property="fc:frame" content="next" />
+          <meta property="fc:frame:image" content="${appUrl}/image.png" />
+          <meta property="fc:frame:button:1" content="Post Again" />
+          <meta property="fc:frame:button:1:action" content="post" />
+          <meta property="fc:frame:post_url" content="${appUrl}/api/frame/create-post" />
         </head>
       </html>`,
       {
@@ -64,27 +53,15 @@ const handler = frames(async (ctx) => {
     );
   } catch (error) {
     console.error("Error publishing:", error);
-
-    const errorFrame = {
-      version: "next",
-      imageUrl: `${appUrl}/image.png`,
-      button: {
-        title: "Try Again",
-        action: {
-          type: "post",
-          name: "Gramafund Retry",
-          url: `${appUrl}/frame`,
-          splashImageUrl: `${appUrl}/image.png`,
-          splashBackgroundColor: "#131313",
-        },
-      },
-    };
-
     return new Response(
       `<!DOCTYPE html>
       <html>
         <head>
-          <meta property="fc:frame" content='${JSON.stringify(errorFrame)}' />
+          <meta property="fc:frame" content="next" />
+          <meta property="fc:frame:image" content="${appUrl}/image.png" />
+          <meta property="fc:frame:button:1" content="Try Again" />
+          <meta property="fc:frame:button:1:action" content="post" />
+          <meta property="fc:frame:post_url" content="${appUrl}/api/frame/create-post" />
         </head>
       </html>`,
       {

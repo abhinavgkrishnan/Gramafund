@@ -4,26 +4,15 @@ const frames = createFrames();
 const appUrl = process.env.HOST || "https://gramafund.vercel.app";
 
 const handler = frames(async () => {
-  const frame = {
-    version: "next",
-    imageUrl: `${appUrl}/image.png`,
-    button: {
-      title: "Start Posting",
-      action: {
-        type: "post",
-        name: "Gramafund Post Type",
-        url: `${appUrl}/api/frame/post-type`,
-        splashImageUrl: `${appUrl}/image.png`,
-        splashBackgroundColor: "#131313",
-      },
-    },
-  };
-
   return new Response(
     `<!DOCTYPE html>
     <html>
       <head>
-        <meta property="fc:frame" content='${JSON.stringify(frame)}' />
+        <meta property="fc:frame" content="next" />
+        <meta property="fc:frame:image" content="${appUrl}/image.png" />
+        <meta property="fc:frame:button:1" content="Start Posting" />
+        <meta property="fc:frame:button:1:action" content="post" />
+        <meta property="fc:frame:post_url" content="${appUrl}/api/frame/create-post" />
       </head>
     </html>`,
     {

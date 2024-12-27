@@ -9,7 +9,7 @@ const frame = {
   button: {
     title: "Launch Gramafund",
     action: {
-      type: "launch_frame" as const, // Must be launch_frame for initial frame
+      type: "launch_frame",
       name: "Gramafund",
       url: `${appUrl}/api/frame/base`,
       splashImageUrl: `${appUrl}/image.png`,
