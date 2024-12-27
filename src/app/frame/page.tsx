@@ -11,7 +11,7 @@ const frame = {
     action: {
       type: "launch_frame",
       name: "Gramafund",
-      url: `${appUrl}/api/frame`,
+      url: `${appUrl}/frame`,
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
