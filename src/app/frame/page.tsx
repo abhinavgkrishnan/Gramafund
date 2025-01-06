@@ -1,17 +1,18 @@
 import { Metadata } from "next";
-import App from "./app";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
 const frame = {
-  version: "next", // Keep as "1" since you're using verified domain
+  version: "next",
   imageUrl: `${appUrl}/image.png`,
   button: {
     title: "Launch Gramafund",
     action: {
       type: "launch_frame",
       name: "Gramafund",
-      url: `${appUrl}/frame`, // Where you want users to land
+      url: `${appUrl}/frame`,
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
@@ -35,5 +36,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function FramePage() {
-  return <App />;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <Button asChild>
+        <Link href="/posts">View Posts</Link>
+      </Button>
+    </div>
+  );
 }

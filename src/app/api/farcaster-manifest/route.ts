@@ -16,7 +16,7 @@ export async function GET() {
         version: "1",
         name: "Gramafund",
         iconUrl: `${appUrl}/icon.png`,
-        homeUrl: `${appUrl}/frame`,
+        homeUrl: `${appUrl}/posts`,
         imageUrl: `${appUrl}/image.png`,
         buttonTitle: "All posts",
         splashImageUrl: `${appUrl}/image.png`,
