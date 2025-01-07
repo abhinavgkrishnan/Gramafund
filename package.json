@@ -14,7 +14,8 @@
     "@farcaster/core": "^0.15.6",
     "@farcaster/frame-sdk": "^0.0.20",
     "@farcaster/frame-wagmi-connector": "^0.0.6",
-    "@neynar/nodejs-sdk": "^2.3.0",
+    "@farcaster/hub-nodejs": "^0.12.7",
+    "@neynar/nodejs-sdk": "^2.7.1",
     "@neynar/react": "^0.9.7",
     "@pigment-css/react": "0.0.9",
     "@radix-ui/react-avatar": "^1.1.1",
@@ -38,6 +39,7 @@
     "lucide-react": "^0.468.0",
     "next": "14.2.4",
     "next-auth": "^4.24.11",
+    "qrcode.react": "^4.2.0",
     "radix-ui": "^1.0.1",
     "react": "^18",
     "react-dom": "^18",
@@ -46,7 +48,7 @@
     "swr": "2.2.5",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
-    "viem": "^2.21.57",
+    "viem": "^2.22.2",
     "wagmi": "^2.14.4"
   },
   "devDependencies": {

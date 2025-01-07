@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 
 const appUrl = process.env.NEXT_PUBLIC_URL || "https://gramafund.vercel.app";
 
+const MAX_TITLE_CHARS = 40;
+const MAX_DESCRIPTION_CHARS = 200;
+const MAX_DETAIL_CHARS = 750;
+
 const frame = {
   version: "next",
   imageUrl: `${appUrl}/image.png`,
@@ -16,6 +20,14 @@ const frame = {
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
     },
+  },
+  postUrl: `${appUrl}/api/frame/cast`,
+  input: {
+    text: `Title (max ${MAX_TITLE_CHARS} chars)
+Description (max ${MAX_DESCRIPTION_CHARS} chars)
+Detail (max ${MAX_DETAIL_CHARS} chars)
+Type (Project/Comment/Reaction/Funding)`,
+    placeholder: "Format: Title\nDescription\nDetail\nType",
   },
 };
 
