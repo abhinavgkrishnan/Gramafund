@@ -5,12 +5,19 @@ import neynarClient from "@/lib/neynarClient";
 export async function POST() {
   try {
     const signedKey = await getSignedKey();
+    console.log("Signed key generated:", signedKey);
 
     return NextResponse.json(signedKey, {
       status: 200,
     });
   } catch (error) {
-    console.log("error", error);
+    console.error("Signer creation error:", error);
+    if (error instanceof Error) {
+          return NextResponse.json({ 
+            error: error.message,
+            details: error.stack 
+          }, { status: 500 });
+        }
     return NextResponse.json({ error: "An error occurred" }, { status: 500 });
   }
 }
