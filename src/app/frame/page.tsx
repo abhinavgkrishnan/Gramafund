@@ -13,6 +13,10 @@ const frame = {
       url: `${appUrl}/frame/create`, // This will redirect to a new create post page
       splashImageUrl: `${appUrl}/image.png`,
       splashBackgroundColor: "#131313",
+      // Ensure that sponsorship status is included
+      sponsorship: {
+        sponsored_by_neynar: true,
+      },
     },
   },
 };
