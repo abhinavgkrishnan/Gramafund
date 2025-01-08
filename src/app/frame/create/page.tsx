@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface FarcasterUser {
   signer_uuid: string;
@@ -19,6 +20,10 @@ interface FarcasterUser {
   status: string;
   signer_approval_url?: string;
   fid?: number;
+  user?: {
+    display_name: string;
+    pfp_url: string;
+  };
 }
 
 const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"] as const;
@@ -32,7 +37,7 @@ export default function CreatePost() {
   const [loading, setLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(null);
-  
+
   // Form states
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -56,7 +61,7 @@ export default function CreatePost() {
         try {
           const response = await axios.get(`/api/frame/signer?signer_uuid=${farcasterUser.signer_uuid}`);
           console.log("Polling response:", response.data);
-          
+
           if (response.data.status === "approved") {
             const updatedUser = response.data;
             localStorage.setItem(
@@ -77,6 +82,34 @@ export default function CreatePost() {
     }
   }, [farcasterUser]);
 
+  // Fetch user details using the fid
+  useEffect(() => {
+    const fetchUserDetails = async (fid: number) => {
+      try {
+        const response = await axios.get(`/api/frame/user?fid=${fid}`);
+        const userData = response.data.users[0];
+        setFarcasterUser((prevUser) => ({
+          ...prevUser,
+          user: {
+            display_name: userData.display_name,
+            pfp_url: userData.pfp_url,
+          },
+          signer_uuid: prevUser?.signer_uuid || '',
+          public_key: prevUser?.public_key || '',
+          status: prevUser?.status || '',
+          signer_approval_url: prevUser?.signer_approval_url,
+          fid: prevUser?.fid,
+        }));
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
+    };
+
+    if (farcasterUser?.fid) {
+      fetchUserDetails(farcasterUser.fid);
+    }
+  }, [farcasterUser?.fid]);
+
   const handleSignIn = async () => {
     setLoading(true);
     try {
@@ -92,7 +125,7 @@ export default function CreatePost() {
     try {
       const response = await axios.post("/api/frame/signer");
       console.log("Signer creation response:", response.data);
-      
+  
       if (response.status === 200) {
         localStorage.setItem(
           LOCAL_STORAGE_KEYS.FARCASTER_USER,
@@ -129,7 +162,7 @@ export default function CreatePost() {
 
       console.log("Cast response:", response.data);
       alert("Post created successfully!");
-      
+
       // Clear form
       setTitle("");
       setDescription("");
@@ -190,6 +223,19 @@ export default function CreatePost() {
       <h1 className="text-2xl font-bold mb-6">Create New Post</h1>
       
       <div className="space-y-4">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage
+              src={farcasterUser.user?.pfp_url}
+              alt={farcasterUser.user?.display_name || "User"}
+            />
+            <AvatarFallback>
+              {farcasterUser.user?.display_name?.charAt(0) || "U"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-lg font-medium">{farcasterUser.user?.display_name}</span>
+        </div>
+
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>
           <Textarea
