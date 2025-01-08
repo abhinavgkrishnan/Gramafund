@@ -15,12 +15,18 @@ export const getSignedKey = async () => {
   }
 
   const fid = await getFid();
+  
+  const options = { 
+   sponsor: {
+	sponsored_by_neynar: true
+  }};
 
   const signedKey = await neynarClient.registerSignedKey({
     signerUuid: createSigner.signer_uuid,
     signature: signature,
     deadline: deadline,
     appFid: fid,
+    sponsor: options.sponsor
   });
 
   return signedKey;
