@@ -1,7 +1,6 @@
 "use client";
-
 import axios from "axios";
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG } from "qrcode.react";
 import { useState, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -36,7 +35,9 @@ const LOCAL_STORAGE_KEYS = {
 export default function CreatePost() {
   const [loading, setLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(null);
+  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(
+    null,
+  );
 
   // Form states
   const [title, setTitle] = useState("");
@@ -59,14 +60,16 @@ export default function CreatePost() {
       setIsCheckingStatus(true);
       const interval = setInterval(async () => {
         try {
-          const response = await axios.get(`/api/frame/signer?signer_uuid=${farcasterUser.signer_uuid}`);
+          const response = await axios.get(
+            `/api/frame/signer?signer_uuid=${farcasterUser.signer_uuid}`,
+          );
           console.log("Polling response:", response.data);
 
           if (response.data.status === "approved") {
             const updatedUser = response.data;
             localStorage.setItem(
               LOCAL_STORAGE_KEYS.FARCASTER_USER,
-              JSON.stringify(updatedUser)
+              JSON.stringify(updatedUser),
             );
             setFarcasterUser(updatedUser);
             clearInterval(interval);
@@ -94,9 +97,9 @@ export default function CreatePost() {
             display_name: userData.display_name,
             pfp_url: userData.pfp_url,
           },
-          signer_uuid: prevUser?.signer_uuid || '',
-          public_key: prevUser?.public_key || '',
-          status: prevUser?.status || '',
+          signer_uuid: prevUser?.signer_uuid || "",
+          public_key: prevUser?.public_key || "",
+          status: prevUser?.status || "",
           signer_approval_url: prevUser?.signer_approval_url,
           fid: prevUser?.fid,
         }));
@@ -125,11 +128,11 @@ export default function CreatePost() {
     try {
       const response = await axios.post("/api/frame/signer");
       console.log("Signer creation response:", response.data);
-  
+
       if (response.status === 200) {
         localStorage.setItem(
           LOCAL_STORAGE_KEYS.FARCASTER_USER,
-          JSON.stringify(response.data)
+          JSON.stringify(response.data),
         );
         setFarcasterUser(response.data);
       }
@@ -176,6 +179,11 @@ export default function CreatePost() {
     }
   };
 
+  const handleSignOut = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEYS.FARCASTER_USER);
+    setFarcasterUser(null);
+  };
+
   if (loading || isCheckingStatus) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -189,18 +197,17 @@ export default function CreatePost() {
   if (!farcasterUser?.status) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Button
-          onClick={handleSignIn}
-          disabled={loading}
-          className="px-6 py-3"
-        >
+        <Button onClick={handleSignIn} disabled={loading} className="px-6 py-3">
           Sign in with Farcaster
         </Button>
       </div>
     );
   }
 
-  if (farcasterUser.status === "pending_approval" && farcasterUser.signer_approval_url) {
+  if (
+    farcasterUser.status === "pending_approval" &&
+    farcasterUser.signer_approval_url
+  ) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <h2 className="text-xl font-bold mb-4">Approve Signer</h2>
@@ -221,7 +228,7 @@ export default function CreatePost() {
   return (
     <div className="container mx-auto max-w-2xl p-4">
       <h1 className="text-2xl font-bold mb-6">Create New Post</h1>
-      
+
       <div className="space-y-4">
         <div className="flex items-center space-x-4">
           <Avatar className="h-10 w-10">
@@ -233,7 +240,9 @@ export default function CreatePost() {
               {farcasterUser.user?.display_name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
-          <span className="text-lg font-medium">{farcasterUser.user?.display_name}</span>
+          <span className="text-lg font-medium">
+            {farcasterUser.user?.display_name}
+          </span>
         </div>
 
         <div>
@@ -268,7 +277,10 @@ export default function CreatePost() {
 
         <div>
           <label className="block text-sm font-medium mb-1">Type</label>
-          <Select value={type} onValueChange={(value) => setType(value as PostType)}>
+          <Select
+            value={type}
+            onValueChange={(value) => setType(value as PostType)}
+          >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select type" />
             </SelectTrigger>
@@ -282,12 +294,19 @@ export default function CreatePost() {
           </Select>
         </div>
 
-        <Button 
-          onClick={handleSubmit} 
+        <Button
+          onClick={handleSubmit}
           disabled={isSubmitting}
           className="w-full"
         >
           {isSubmitting ? "Creating..." : "Create Post"}
+        </Button>
+
+        <Button
+          onClick={handleSignOut}
+          className="w-full mt-4"
+        >
+          Sign Out
         </Button>
       </div>
     </div>

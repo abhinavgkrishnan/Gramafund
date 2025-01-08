@@ -13,11 +13,14 @@ export async function POST() {
   } catch (error) {
     console.error("Signer creation error:", error);
     if (error instanceof Error) {
-          return NextResponse.json({ 
-            error: error.message,
-            details: error.stack 
-          }, { status: 500 });
-        }
+      return NextResponse.json(
+        {
+          error: error.message,
+          details: error.stack,
+        },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({ error: "An error occurred" }, { status: 500 });
   }
 }
