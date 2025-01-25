@@ -13,6 +13,7 @@ import { PostHeader } from "@/components/post/PostHeader";
 import { PostEngagement } from "@/components/post/PostEngagement";
 import { CommentForm } from "@/components/comment/CommentForm";
 import { CommentComponent } from "@/components/comment/CommentComponent";
+import ImpactCurveComponent from "@/components/ImpactCurveComponent";
 import type { Comment, Post } from "@/types";
 
 // Helper function to get all comment IDs including nested ones
@@ -56,13 +57,13 @@ export default function PostPage({ params }: PageProps) {
   const { data: reactionData, mutate: mutateReactions } = useSWR(
     user?.fid && postData?.post
       ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}${
-          commentIds.length ? `&commentIds=${commentIds.join(",")}` : ''
+          commentIds.length ? `&commentIds=${commentIds.join(",")}` : ""
         }`
       : null,
     async (url: string) => {
       const response = await axios.get(url);
       return response.data;
-    }
+    },
   );
 
   const handleLike = async () => {
@@ -361,6 +362,12 @@ export default function PostPage({ params }: PageProps) {
           <p className="text-lg leading-relaxed whitespace-pre-wrap">
             {post.detail}
           </p>
+        </div>
+
+        {/* Impact Curve Chart and Form */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Impact Curve</h2>
+          <ImpactCurveComponent projectId={post.id} />
         </div>
 
         <PostEngagement

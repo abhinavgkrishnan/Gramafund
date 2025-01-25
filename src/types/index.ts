@@ -25,4 +25,34 @@ export type Post = {
   replies?: Comment[];
   hasLiked?: boolean;
   authorFid?: number;
+  curveSubmissions?: {
+    xIntercept: number;
+    yIntercept: number;
+    middlePoint: { x: number; y: number };
+  }[];
 };
+
+export interface Project {
+  id: string;
+  title: string;
+  description: string;
+  xIntercept: number;
+  yIntercept: number;
+  middlePoint: { x: number; y: number };
+  color: string;
+  curveSubmissions?: {
+    xIntercept: number;
+    yIntercept: number;
+    middlePoint: { x: number; y: number };
+  }[];
+}
+
+export interface CurvePoint {
+  x: number;
+  y: number;
+}
+
+export interface ProjectData {
+  project: Project;
+  points: CurvePoint[];
+}
