@@ -324,17 +324,11 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="space-y-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold mb-4">{project.title}</h1>
-            <p className="text-muted-foreground">{project.description}</p>
-          </div>
-        </div>
         <Card>
           <CardHeader>
             <CardTitle>Impact Curve</CardTitle>
             <CardDescription>
-              Aggregated impact curve for all submitted curves and your curve
+              Aggregated impact curve for all submitted curves
             </CardDescription>
           </CardHeader>
           <CardContent>

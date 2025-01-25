@@ -366,7 +366,6 @@ export default function PostPage({ params }: PageProps) {
 
         {/* Impact Curve Chart and Form */}
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">Impact Curve</h2>
           <ImpactCurveComponent projectId={post.id} />
         </div>
 
