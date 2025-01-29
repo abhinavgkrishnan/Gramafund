@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useNeynarContext } from "@neynar/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,6 +43,7 @@ export function CastModal({
 }: CastModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter(); // Import useRouter hook
 
   // Combine internal and external state
   const isOpen = externalOpen ?? internalOpen;
@@ -94,7 +95,7 @@ export function CastModal({
 
     setIsSubmitting(true);
     try {
-      await axios.post("/api/cast", {
+      const response = await axios.post("/api/cast", {
         signerUuid: user.signer_uuid,
         title,
         description,
@@ -112,6 +113,10 @@ export function CastModal({
       setDetail("");
       setType("Project");
       handleOpenChange(false);
+
+     
+      const postId = response.data.data.cast.hash; 
+      router.push(`/posts/${postId}`);
     } catch (error) {
       console.error("Detailed cast error:", error);
 
