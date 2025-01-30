@@ -270,7 +270,6 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!user?.signer_uuid) {
       toast({
         description: "Please sign in with Farcaster first",
@@ -278,7 +277,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
       });
       return;
     }
-
+  
     try {
       // Submit curve data as a special comment
       await axios.post("/api/posts/reply", {
@@ -290,19 +289,25 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
           middlePoint: newProject.middlePoint,
         },
       });
-
+  
       // Optimistically update local state
       setAggregateCurve((prevCurves) => [...prevCurves, newProject]);
-
       toast({
         description: "Curve submitted successfully",
       });
     } catch (error) {
-      console.error("Failed to submit curve:", error);
-      toast({
-        description: "Failed to submit curve",
-        variant: "destructive",
-      });
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        toast({
+          description: error.response.data.error,
+          variant: "destructive",
+        });
+      } else {
+        console.error("Failed to submit curve:", error);
+        toast({
+          description: "Failed to submit curve",
+          variant: "destructive",
+        });
+      }
     }
   };
 
