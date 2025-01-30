@@ -19,9 +19,7 @@ export async function GET(request: Request) {
 
     // Get approved posts from database
     const approvedPosts = await getApprovedPosts();
-    const approvedHashes = new Set(
-      approvedPosts.rows.map((post) => post.post_hash),
-    );
+    const approvedHashes = new Set(approvedPosts.rows.map((post) => post.post_hash));
 
     // Fetch from Neynar with retries
     for (let i = 0; i < 3; i++) {
@@ -42,8 +40,7 @@ export async function GET(request: Request) {
         // Combine and deduplicate posts
         const allCasts = responses.flatMap((response) => response.casts);
         const uniqueCasts = allCasts.filter(
-          (cast, index) =>
-            allCasts.findIndex((c) => c.hash === cast.hash) === index,
+          (cast, index) => allCasts.findIndex((c) => c.hash === cast.hash) === index,
         );
 
         // Filter to only include approved posts
@@ -54,9 +51,7 @@ export async function GET(request: Request) {
         const posts = await Promise.all(
           filteredCasts.map(async (cast) => {
             const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
-            const descriptionMatch = cast.text.match(
-              /\[description\]\s*(.*?)(?=\s*\[|$)/,
-            );
+            const descriptionMatch = cast.text.match(/\[description\]\s*(.*?)(?=\s*\[|$)/);
             const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
 
             if (!titleMatch?.[1] || !descriptionMatch?.[1] || !typeMatch?.[1]) {
@@ -69,6 +64,17 @@ export async function GET(request: Request) {
               return null;
             }
 
+            // Fetch conversation to count comments excluding curve data
+            const conversation = await client.lookupCastConversation({
+              identifier: cast.hash,
+              type: "hash",
+              replyDepth: 1,
+            });
+
+            const replies = conversation.conversation.cast.direct_replies || [];
+            const curveDataComments = replies.filter(reply => /\[curve-data\]/.test(reply.text));
+            const regularCommentsCount = cast.replies.count - curveDataComments.length;
+
             return {
               id: cast.hash,
               type: type as "Project" | "Comment" | "Reaction" | "Funding",
@@ -77,7 +83,7 @@ export async function GET(request: Request) {
               author: cast.author.display_name || cast.author.username,
               date: new Date(cast.timestamp).toISOString().split("T")[0],
               karma: cast.reactions.likes_count,
-              comments: cast.replies.count,
+              comments: regularCommentsCount,
               tags: [],
             };
           }),
