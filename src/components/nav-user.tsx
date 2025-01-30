@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  BadgeCheck,
-  Bell,
+  // BadgeCheck,
+  // Bell,
   ChevronsUpDown,
-  CreditCard,
+  // CreditCard,
   LogOut,
-  Sparkles,
+  // Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useNeynarContext } from "@neynar/react";
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
+  // DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -41,12 +41,12 @@ interface NavUserProps {
 export function NavUser({ user, isExpanded = true }: NavUserProps) {
   const { isMobile } = useSidebar();
   const router = useRouter();
-    const { logoutUser } = useNeynarContext();
-  
-    const handleSignOut = () => {
-      logoutUser();
-      router.push('/');
-    };
+  const { logoutUser } = useNeynarContext();
+
+  const handleSignOut = () => {
+    logoutUser();
+    router.push("/");
+  };
 
   const displayName = user.display_name || user.username || `User ${user.fid}`;
   const initials = displayName
@@ -107,7 +107,7 @@ export function NavUser({ user, isExpanded = true }: NavUserProps) {
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {/* <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -128,7 +128,7 @@ export function NavUser({ user, isExpanded = true }: NavUserProps) {
                 <Bell className="mr-2 h-4 w-4" />
                 Notifications
               </DropdownMenuItem>
-            </DropdownMenuGroup>
+            </DropdownMenuGroup> */}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleSignOut}
