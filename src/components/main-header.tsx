@@ -36,8 +36,9 @@ export function MainHeader() {
 
       setIsLoading(true);
       try {
-        const response = await axios.get(`/api/posts/search?q=${encodeURIComponent(debouncedQuery)}`);
-        console.log('Search results:', response.data.posts);
+        const response = await axios.get(
+          `/api/posts/search?q=${encodeURIComponent(debouncedQuery)}`,
+        );
         setResults(response.data.posts || []);
       } catch (error) {
         console.error("Error searching posts:", error);
@@ -57,43 +58,43 @@ export function MainHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
-        {/* Menu and Logo */}
-        <div className={cn("flex items-center", isSearchOpen ? "hidden sm:flex" : "flex")}>
-          <SidebarTrigger className="mr-2 md:hidden">
-            <Menu className="h-5 w-5" />
-          </SidebarTrigger>
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="font-bold">GramaFund</span>
-          </Link>
-        </div>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto h-14">
+        <div className="flex h-full items-center justify-between gap-4">
+          {/* Logo and Menu Section */}
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="md:hidden">
+              <Menu className="h-5 w-5" />
+            </SidebarTrigger>
+            <Link href="/" className="font-bold">
+              GramaFund
+            </Link>
+          </div>
 
-        {/* Search Container */}
-        <div className="flex-1 flex justify-end">
-          {/* Mobile Search Icon */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="sm:hidden"
-            onClick={() => setIsSearchOpen(true)}
-          >
-            {!isSearchOpen && <Search className="h-5 w-5" />}
-          </Button>
+          {/* Search Section */}
+          <div className="flex-1 flex justify-end max-w-[600px]">
+            {/* Mobile Search Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="sm:hidden"
+              onClick={() => setIsSearchOpen(true)}
+            >
+              {!isSearchOpen && <Search className="h-5 w-5" />}
+            </Button>
 
-          {/* Search Input and Results */}
-          <div
-            ref={searchRef}
-            className={cn(
-              "absolute left-0 right-0 top-0 p-4 bg-background",
-              "sm:static sm:p-0 sm:w-[300px]",
-              isSearchOpen ? "block" : "hidden sm:block"
-            )}
-          >
-            <div className="relative w-full">
-              {/* Search Input */}
+            {/* Search Input */}
+            <div
+              ref={searchRef}
+              className={cn(
+                "relative",
+                isSearchOpen
+                  ? "absolute top-0 left-0 right-0 p-4 bg-background/95 backdrop-blur h-14 flex items-center z-50"
+                  : "hidden sm:block w-full max-w-[300px]",
+              )}
+            >
               <div className="relative w-full">
-                <div className="relative flex items-center rounded-lg border shadow-sm">
+                <div className="flex items-center rounded-lg border shadow-sm">
                   <Search className="absolute left-2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
@@ -116,35 +117,37 @@ export function MainHeader() {
                     </Button>
                   )}
                 </div>
-              </div>
 
-              {/* Search Results */}
-              {searchQuery && (
-                <div className="absolute left-0 right-0 top-full mt-1 max-h-[300px] overflow-y-auto rounded-md border bg-background shadow-lg">
-                  {isLoading && (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      Searching...
-                    </div>
-                  )}
-                  {!isLoading && results.length === 0 && (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      No results found
-                    </div>
-                  )}
-                  {results.map((result) => (
-                    <button
-                      key={result.id}
-                      onClick={() => handleSelectPost(result.id)}
-                      className="w-full px-3 py-2 text-left hover:bg-accent flex flex-col gap-1"
-                    >
-                      <div className="font-medium text-sm">{result.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        by {result.author} • {result.date}
+                {/* Search Results Dropdown */}
+                {searchQuery && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] max-h-[300px] overflow-y-auto rounded-md border bg-background shadow-lg z-[60]">
+                    {isLoading && (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        Searching...
                       </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+                    )}
+                    {!isLoading && results.length === 0 && (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No results found
+                      </div>
+                    )}
+                    {results.map((result) => (
+                      <button
+                        key={result.id}
+                        onClick={() => handleSelectPost(result.id)}
+                        className="w-full px-3 py-2 text-left hover:bg-accent flex flex-col gap-1"
+                      >
+                        <div className="font-medium text-sm">
+                          {result.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          by {result.author} • {result.date}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
