@@ -29,8 +29,8 @@ const data = {
       icon: Star,
     },
     {
-      name: "Featured",
-      url: "#",
+      name: "admin",
+      url: "/admin",
       icon: Users,
     },
   ],

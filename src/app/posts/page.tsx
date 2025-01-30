@@ -65,13 +65,13 @@ function PostsContent() {
     );
   }
 
-  if (!posts?.length) {
-    return (
-      <div className="flex flex-1 flex-col items-center justify-center p-4">
-        <p>No posts found</p>
-      </div>
-    );
-  }
+  // if (!posts?.length) {
+  //   return (
+  //     <div className="flex flex-1 flex-col items-center justify-center p-4">
+  //       <p>No posts found</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
