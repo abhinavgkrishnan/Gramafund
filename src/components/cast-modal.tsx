@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"] as const;
 type PostType = (typeof POST_TYPES)[number];
@@ -59,6 +60,8 @@ export function CastModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [detail, setDetail] = useState("");
+  const [requestedFunding, setRequestedFunding] = useState<number | "">("");
+  const [fundingError, setFundingError] = useState("");
   const [type, setType] = useState<PostType>("Project");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useNeynarContext();
@@ -85,11 +88,21 @@ export function CastModal({
       return;
     }
 
-    if (!title.trim() || !description.trim() || !detail.trim()) {
+    if (
+      !title.trim() ||
+      !description.trim() ||
+      !detail.trim() ||
+      requestedFunding === ""
+    ) {
       toast({
         description: "Please fill in all fields",
         variant: "destructive",
       });
+      return;
+    }
+
+    if (requestedFunding <= 0) {
+      setFundingError("Requested funding must be greater than 0");
       return;
     }
 
@@ -100,6 +113,7 @@ export function CastModal({
         title,
         description,
         detail,
+        requestedFunding,
         type,
         channel: "gramafund",
       });
@@ -114,8 +128,7 @@ export function CastModal({
       setType("Project");
       handleOpenChange(false);
 
-     
-      const postId = response.data.data.cast.hash; 
+      const postId = response.data.data.cast.hash;
       router.push(`/posts/${postId}`);
     } catch (error) {
       console.error("Detailed cast error:", error);
@@ -257,6 +270,31 @@ export function CastModal({
               </div>
             </div>
 
+            {/* Requested Funding Section */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">
+                Requested Funding ($)
+              </label>
+              <Input
+                type="number"
+                placeholder="Enter amount in dollars"
+                value={requestedFunding}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (isNaN(value) || value <= 0) {
+                    setFundingError("Requested funding must be greater than 0");
+                  } else {
+                    setFundingError("");
+                  }
+                  setRequestedFunding(e.target.value === "" ? "" : value);
+                }}
+                className="px-3 py-2"
+              />
+              {fundingError && (
+                <div className="text-red-600 text-xs">{fundingError}</div>
+              )}
+            </div>
+
             <div className="flex items-center justify-between border-t pt-4">
               <Select
                 value={type}
@@ -283,7 +321,8 @@ export function CastModal({
                   counts.title > MAX_TITLE_CHARS ||
                   counts.description > MAX_DESCRIPTION_CHARS ||
                   counts.detail > MAX_DETAIL_CHARS ||
-                  isSubmitting
+                  isSubmitting ||
+                  !requestedFunding
                 }
                 className="bg-black text-white hover:bg-black/90"
                 size="sm"

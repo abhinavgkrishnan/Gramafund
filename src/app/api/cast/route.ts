@@ -1,4 +1,3 @@
-// app/api/cast/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { NeynarAPIClient } from "@neynar/nodejs-sdk";
 import { createPostApproval } from "@/lib/db";
@@ -12,17 +11,25 @@ const CHANNELS = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { signerUuid, title, description, detail, type, channel } = body;
+    const { signerUuid, title, description, detail, type, channel, requestedFunding } = body;
 
     // Validate required fields
-    if (!signerUuid || !title || !description || !detail || !type) {
+    if (!signerUuid || !title || !description || !detail || !type || requestedFunding === undefined) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const formattedText = `[title] ${title}\n[description] ${description}\n[detail] ${detail}\n[type] ${type}`;
+    // Validate requestedFunding
+    if (typeof requestedFunding !== "number" || requestedFunding <= 0) {
+      return NextResponse.json(
+        { error: "Requested funding must be a number greater than 0" },
+        { status: 400 }
+      );
+    }
+
+    const formattedText = `[title] ${title}\n[description] ${description}\n[detail] ${detail}\n[requestedFunding] $${requestedFunding}\n[type] ${type}`;
 
     // Get signer info first to get FID
     const signer = await client.lookupSigner({ signerUuid });
@@ -47,6 +54,7 @@ export async function POST(request: NextRequest) {
       title,
       description,
       type,
+      requestedFunding, // Ensure requestedFunding is passed before authorFid
       signer.fid.toString()
     );
 

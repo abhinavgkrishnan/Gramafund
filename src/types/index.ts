@@ -16,6 +16,7 @@ export type Post = {
   title: string;
   description: string;
   detail: string;
+  requestedFunding: number;
   author: string;
   authorPfp?: string;
   date: string;
@@ -36,6 +37,7 @@ export interface Project {
   id: string;
   title: string;
   description: string;
+  requestedFunding: number;
   xIntercept: number;
   yIntercept: number;
   middlePoint: { x: number; y: number };

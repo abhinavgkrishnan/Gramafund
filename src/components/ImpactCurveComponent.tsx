@@ -51,6 +51,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
     id: String(Date.now()),
     title: "",
     description: "",
+    requestedFunding: 0,
     xIntercept: 100000,
     yIntercept: 80,
     middlePoint: { x: 83000, y: 60 },
@@ -65,6 +66,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
         id: String(Date.now()), // Generate an ID for each submission
         title: "",
         description: "",
+        requestedFunding: 0,
         color: "hsl(var(--chart-1))",
       })) || [],
   );
@@ -88,6 +90,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
         id: projectData.post.id,
         title: projectData.post.title,
         description: projectData.post.description,
+        requestedFunding: projectData.post.requestedFunding,
         xIntercept: projectData.post.xIntercept,
         yIntercept: projectData.post.yIntercept,
         middlePoint: projectData.post.middlePoint,
@@ -102,6 +105,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
             id: String(Date.now()),
             title: "",
             description: "",
+            requestedFunding: 0,
             color: "hsl(var(--chart-1))",
           })),
         );
@@ -176,13 +180,13 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!activePoint || !initialCoords || !initialValues) return;
+      if (!activePoint || !initialCoords || !initialValues || !projectData?.post) return;
 
       const deltaX = e.clientX - initialCoords.x;
       const deltaY = e.clientY - initialCoords.y;
 
       // Convert pixel movement to chart values with increased sensitivity
-      const xScale = (200000 / window.innerWidth) * 2; // 2x more sensitive
+      const xScale = (projectData.post.requestedFunding / window.innerWidth) * 2;
       const yScale = (100 / window.innerHeight) * 2; // 2x more sensitive
 
       // Round to nearest thousand for x values
@@ -194,7 +198,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
           case "x": {
             const newXIntercept = Math.max(
               0,
-              Math.min(initialValues.xIntercept + scaledDeltaX, 200000),
+              Math.min(initialValues.xIntercept + scaledDeltaX, projectData.post.requestedFunding),
             );
             const wasMiddleMoved =
               initialCoords.x !== initialValues.middlePoint.x;
@@ -248,7 +252,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
         }
       });
     },
-    [activePoint, initialCoords, initialValues],
+    [activePoint, initialCoords, initialValues, projectData],
   );
 
   const handleMouseUp = useCallback(() => {
@@ -277,7 +281,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
       });
       return;
     }
-  
+
     try {
       // Submit curve data as a special comment
       await axios.post("/api/posts/reply", {
@@ -289,7 +293,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
           middlePoint: newProject.middlePoint,
         },
       });
-  
+
       // Optimistically update local state
       setAggregateCurve((prevCurves) => [...prevCurves, newProject]);
       toast({
@@ -347,7 +351,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
                   <XAxis
                     dataKey="x"
                     type="number"
-                    domain={[0, 200000]}
+                    domain={[0, project.requestedFunding]}
                     label={{ value: "Funding ($)", position: "bottom" }}
                   />
                   <YAxis
@@ -412,7 +416,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
             </div>
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
-                <Label>Maximum Impact (Y-Intercept)</Label>
+                <Label>Maximum Impact</Label>
                 <Slider
                   value={[newProject.yIntercept]}
                   onValueChange={([value]) =>
@@ -428,7 +432,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Required Funding (X-Intercept)</Label>
+                <Label>Requested Funding</Label>
                 <Slider
                   value={[newProject.xIntercept]}
                   onValueChange={([value]) =>
@@ -445,7 +449,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
                     })
                   }
                   min={10000}
-                  max={200000}
+                  max={project.requestedFunding}
                   step={1000}
                 />
                 <p className="text-sm text-muted-foreground">
@@ -454,7 +458,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Midpoint X Position</Label>
+                <Label>Shape of the curve (X)</Label>
                 <Slider
                   value={[newProject.middlePoint.x]}
                   onValueChange={([value]) =>
@@ -476,7 +480,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Midpoint Y Position</Label>
+                <Label>Shape of the curve (Y)</Label>
                 <Slider
                   value={[newProject.middlePoint.y]}
                   onValueChange={([value]) =>

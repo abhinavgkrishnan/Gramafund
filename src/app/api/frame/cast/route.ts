@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     // Format the text regardless of input source
-    const formattedText = `[title] ${body.title}\n[description] ${body.description}\n[detail] ${body.detail}\n[type] ${body.type}`;
+    const formattedText = `[title] ${body.title}\n[description] ${body.description}\n[detail] ${body.detail}\n[requestedFunding] $${body.requestedFunding}\n[type] ${body.type}`;
 
     // Publish the cast
     const cast = await neynarClient.publishCast({
