@@ -23,7 +23,7 @@ export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="mx-auto max-w-2xl text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to GramaFund</h1>
+        <h1 className="mb-4 text-4xl font-bold">Welcome to ANT Protocol</h1>
         <p className="mb-8 text-xl text-muted-foreground">
           A platform for effective altruists to collaborate, share projects, and
           maximize impact.

@@ -67,7 +67,7 @@ export function MainHeader() {
               <Menu className="h-5 w-5" />
             </SidebarTrigger>
             <Link href="/" className="font-bold">
-              GramaFund
+              ANT Protocol
             </Link>
           </div>
 
