@@ -98,8 +98,10 @@ export async function GET(
     // Update regex to include detail and requestedFunding fields
     const titleMatch = cast.text.match(/\[title\](.*?)\n/);
     const descriptionMatch = cast.text.match(/\[description\](.*?)\n/);
-    const detailMatch = cast.text.match(/\[detail\](.*?)\n/);
-    const requestedFundingMatch = cast.text.match(/\[requestedFunding\]\s*\$(\d+)/);
+    const detailMatch = cast.text.match(/\[detail\]([\s\S]*?)(?=\[|$)/);
+    const requestedFundingMatch = cast.text.match(
+      /\[requestedFunding\]\s*\$(\d+)/,
+    );
     const typeMatch = cast.text.match(/\[type\](.*?)$/);
 
     // Transform regular comments as before
@@ -127,7 +129,9 @@ export async function GET(
       title: titleMatch?.[1]?.trim() || "Untitled",
       description: descriptionMatch?.[1]?.trim() || "",
       detail: detailMatch?.[1]?.trim() || "",
-      requestedFunding: requestedFundingMatch ? parseInt(requestedFundingMatch[1], 10) : 200000,
+      requestedFunding: requestedFundingMatch
+        ? parseInt(requestedFundingMatch[1], 10)
+        : 200000,
       author: cast.author.display_name || cast.author.username,
       authorPfp: cast.author.pfp_url,
       authorFid: cast.author.fid,
@@ -138,9 +142,9 @@ export async function GET(
       replies: comments,
       curveSubmissions, // Add curve submissions to the response
       // Default curve values if no submissions
-      xIntercept: 100000,
+      xIntercept: 500,
       yIntercept: 80,
-      middlePoint: { x: 83000, y: 60 },
+      middlePoint: { x: 100, y: 60 },
       color: "hsl(var(--chart-1))",
     };
 

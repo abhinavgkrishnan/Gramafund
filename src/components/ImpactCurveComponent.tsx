@@ -52,9 +52,9 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
     title: "",
     description: "",
     requestedFunding: 0,
-    xIntercept: 100000,
+    xIntercept: 100,
     yIntercept: 80,
-    middlePoint: { x: 83000, y: 60 },
+    middlePoint: { x: 60, y: 60 },
     color: "hsl(var(--chart-1))",
   });
 
@@ -180,17 +180,24 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!activePoint || !initialCoords || !initialValues || !projectData?.post) return;
+      if (
+        !activePoint ||
+        !initialCoords ||
+        !initialValues ||
+        !projectData?.post
+      )
+        return;
 
       const deltaX = e.clientX - initialCoords.x;
       const deltaY = e.clientY - initialCoords.y;
 
       // Convert pixel movement to chart values with increased sensitivity
-      const xScale = (projectData.post.requestedFunding / window.innerWidth) * 2;
+      const xScale =
+        (projectData.post.requestedFunding / window.innerWidth) * 2;
       const yScale = (100 / window.innerHeight) * 2; // 2x more sensitive
 
       // Round to nearest thousand for x values
-      const scaledDeltaX = Math.round((deltaX * xScale) / 1000) * 1000;
+      const scaledDeltaX = Math.round((deltaX * xScale) / 10) * 10;
       const scaledDeltaY = Math.round(-deltaY * yScale); // Negative because Y axis is inverted
 
       setNewProject((prev) => {
@@ -198,7 +205,10 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
           case "x": {
             const newXIntercept = Math.max(
               0,
-              Math.min(initialValues.xIntercept + scaledDeltaX, projectData.post.requestedFunding),
+              Math.min(
+                initialValues.xIntercept + scaledDeltaX,
+                projectData.post.requestedFunding,
+              ),
             );
             const wasMiddleMoved =
               initialCoords.x !== initialValues.middlePoint.x;
@@ -448,9 +458,9 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
                       },
                     })
                   }
-                  min={10000}
+                  min={0}
                   max={project.requestedFunding}
-                  step={1000}
+                  step={project.requestedFunding / 1000}
                 />
                 <p className="text-sm text-muted-foreground">
                   Value: ${newProject.xIntercept.toLocaleString()}
@@ -472,7 +482,7 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
                   }
                   min={0}
                   max={newProject.xIntercept}
-                  step={1000}
+                  step={project.requestedFunding / 1000}
                 />
                 <p className="text-sm text-muted-foreground">
                   Value: {newProject.middlePoint.x.toLocaleString()}
