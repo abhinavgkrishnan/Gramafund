@@ -30,13 +30,29 @@ interface PageProps {
   params: { id: string };
 }
 
+const LoadingState = () => (
+  <div className="container max-w-4xl py-8">
+    <div className="space-y-6">
+      <div className="w-24 h-8 bg-muted animate-pulse rounded" />
+      <div className="space-y-4">
+        <div className="h-12 bg-muted animate-pulse rounded" />
+        <div className="h-6 bg-muted animate-pulse rounded w-1/3" />
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-muted animate-pulse rounded" />
+        <div className="h-4 bg-muted animate-pulse rounded w-5/6" />
+        <div className="h-4 bg-muted animate-pulse rounded w-4/6" />
+      </div>
+    </div>
+  </div>
+);
+
 export default function PostPage({ params }: PageProps) {
   const { user } = useNeynarContext();
   const { toast } = useToast();
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  // Fetch post data with retry mechanism
   const {
     data: postData,
     error,
@@ -300,7 +316,7 @@ export default function PostPage({ params }: PageProps) {
       await axios.post("/api/posts/reply", {
         signerUuid: user.signer_uuid,
         text: text,
-        parentHash: parentComment.id, // Use the parent comment's ID
+        parentHash: parentComment.id,
       });
 
       await mutatePost();
@@ -317,26 +333,16 @@ export default function PostPage({ params }: PageProps) {
     }
   };
 
-  if (isLoading || !postData) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <div>Loading...</div>
-      </div>
-    );
+  // Show loading state for any loading condition
+  if (isLoading || !postData || !post) {
+    return <LoadingState />;
   }
 
+  // Only show error state after loading is complete
   if (error) {
     return (
       <div className="container max-w-4xl py-8">
         <div>Error loading post</div>
-      </div>
-    );
-  }
-
-  if (!post) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <div>Post not found</div>
       </div>
     );
   }
@@ -350,7 +356,6 @@ export default function PostPage({ params }: PageProps) {
           </Button>
         </Link>
 
-        {/* Author info and title */}
         <PostHeader
           author={post.author}
           authorPfp={post.authorPfp}
@@ -360,7 +365,6 @@ export default function PostPage({ params }: PageProps) {
           tags={post.tags}
         />
 
-        {/* Description */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Project Details</h2>
           <p className="text-lg leading-relaxed text-muted-foreground">
@@ -368,7 +372,6 @@ export default function PostPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* Details */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Spending plan</h2>
           <p className="text-lg leading-relaxed text-muted-foreground">
@@ -376,7 +379,6 @@ export default function PostPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* Links */}
         {post.links && post.links.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Links of Interest</h2>
@@ -397,7 +399,6 @@ export default function PostPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Impact Curve Chart and Form */}
         <div className="space-y-6">
           <ImpactCurveComponent projectId={post.id} />
         </div>
