@@ -17,6 +17,7 @@ export type Post = {
   description: string;
   detail: string;
   requestedFunding: number;
+  links: string[];
   author: string;
   authorPfp?: string;
   date: string;

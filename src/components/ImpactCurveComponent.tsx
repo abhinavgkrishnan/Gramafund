@@ -347,7 +347,11 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
           <CardHeader>
             <CardTitle>Impact Curve</CardTitle>
             <CardDescription>
-              Aggregated impact curve for all submitted curves
+              This is how you evaluate the project. Please look at all the
+              details provided by the OP in the text above. You can compare your
+              curve with the aggregated curve submitted by the community
+              members. Think about impact as the best bang for each dollar this
+              project gets funded.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -426,7 +430,10 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
             </div>
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
-                <Label>Maximum Impact</Label>
+                <Label>Y-intercept</Label>
+                <p className="text-xs text-muted-foreground">
+                  How much impact does the first dollar have on this project?
+                </p>
                 <Slider
                   value={[newProject.yIntercept]}
                   onValueChange={([value]) =>
@@ -442,7 +449,11 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label>Requested Funding</Label>
+                <Label>X-intercept</Label>
+                <p className="text-xs text-muted-foreground">
+                  At what point does the impact go to zero for this project? (it
+                  need not be at the max. Requested funding for this project.)
+                </p>
                 <Slider
                   value={[newProject.xIntercept]}
                   onValueChange={([value]) =>
@@ -469,6 +480,10 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
 
               <div className="space-y-2">
                 <Label>Shape of the curve (X)</Label>
+                <p className="text-xs text-muted-foreground">
+                  How does the impact change from the first dollar impact to the
+                  last dollar impact?
+                </p>
                 <Slider
                   value={[newProject.middlePoint.x]}
                   onValueChange={([value]) =>
@@ -491,6 +506,10 @@ const ImpactCurveComponent: React.FC<ImpactCurveComponentProps> = ({
 
               <div className="space-y-2">
                 <Label>Shape of the curve (Y)</Label>
+                <p className="text-xs text-muted-foreground">
+                  How does the impact change from the first dollar impact to the
+                  last dollar impact?
+                </p>
                 <Slider
                   value={[newProject.middlePoint.y]}
                   onValueChange={([value]) =>

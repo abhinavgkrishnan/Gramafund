@@ -11,7 +11,7 @@ const CHANNELS = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { signerUuid, title, description, detail, type, channel, requestedFunding } = body;
+    const { signerUuid, title, description, detail, type, channel, requestedFunding, links } = body;
 
     // Validate required fields
     if (!signerUuid || !title || !description || !detail || !type || requestedFunding === undefined) {
@@ -29,11 +29,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const formattedText = `[title] ${title}\n[description] ${description}\n[detail] ${detail}\n[requestedFunding] $${requestedFunding}\n[type] ${type}`;
+    // Create GitHub Gist
+    const gistData = {
+      description: `Gramafund Submission: ${title}`,
+      public: true,
+      files: {
+        'submission.json': {
+          content: JSON.stringify({
+            title,
+            description,
+            detail,
+            type,
+            requestedFunding,
+            links, // Include links if provided
+            timestamp: new Date().toISOString()
+          }, null, 2)
+        }
+      }
+    };
 
-    // Get signer info first to get FID
+    const gistResponse = await fetch('https://api.github.com/gists', {
+      method: 'POST',
+      headers: {
+        'Authorization': `token ${process.env.GITHUB_TOKEN}`,
+        'User-Agent': 'Gramafund/1.0.0',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify(gistData)
+    });
+
+    if (!gistResponse.ok) {
+      const error = await gistResponse.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    const gist = await gistResponse.json();
+    const gistUrl = gist.html_url;
+
+    // Get signer info for FID
     const signer = await client.lookupSigner({ signerUuid });
-    
     if (!signer.fid) {
       return NextResponse.json(
         { error: "Could not retrieve signer FID" },
@@ -41,21 +75,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Post to Farcaster
+    // Create cast with gist link
+    const castText = `New Project Submission: "${title}"\nRequested: $${requestedFunding}\nDetails: ${gistUrl}`;
+    
     const castResponse = await client.publishCast({
       signerUuid,
-      text: formattedText,
+      text: castText,
       parent: CHANNELS[channel as keyof typeof CHANNELS],
     });
-    
-    // Store in approval system using FID from signer
+
+    // Store in database with both cast and gist references
     await createPostApproval(
       castResponse.cast.hash,
       title,
       description,
       type,
-      requestedFunding, // Ensure requestedFunding is passed before authorFid
-      signer.fid.toString()
+      requestedFunding,
+      signer.fid.toString(),
+      gistUrl,  // Store gist URL
     );
 
     return NextResponse.json(
@@ -63,16 +100,17 @@ export async function POST(request: NextRequest) {
         message: "Cast submitted for approval", 
         data: { 
           cast: castResponse.cast,
-          postHash: castResponse.cast.hash
+          postHash: castResponse.cast.hash,
+          gistUrl: gistUrl
         } 
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error processing cast:", error);
+    console.error("Error processing submission:", error);
     return NextResponse.json(
       { 
-        error: "Failed to process cast",
+        error: "Failed to process submission",
         details: error instanceof Error ? error.message : "Unknown error"
       },
       { status: 500 }

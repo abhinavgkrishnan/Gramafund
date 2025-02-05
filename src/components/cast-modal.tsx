@@ -23,15 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 
 const POST_TYPES = ["Project", "Comment", "Reaction", "Funding"] as const;
 type PostType = (typeof POST_TYPES)[number];
 
 const MAX_TITLE_CHARS = 40;
-const MAX_DESCRIPTION_CHARS = 200;
-const MAX_DETAIL_CHARS = 750;
+const MAX_DESCRIPTION_CHARS = 300;
+const MAX_DETAIL_CHARS = 1000;
+const MAX_LINK_CHARS = 200;
 
 interface CastModalProps {
   open?: boolean;
@@ -60,6 +59,7 @@ export function CastModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [detail, setDetail] = useState("");
+  const [links, setLinks] = useState("");
   const [requestedFunding, setRequestedFunding] = useState<number | "">("");
   const [fundingError, setFundingError] = useState("");
   const [type, setType] = useState<PostType>("Project");
@@ -71,12 +71,14 @@ export function CastModal({
     title: title.length,
     description: description.length,
     detail: detail.length,
+    links: links.length,
   };
 
   const remaining = {
     title: MAX_TITLE_CHARS - counts.title,
     description: MAX_DESCRIPTION_CHARS - counts.description,
     detail: MAX_DETAIL_CHARS - counts.detail,
+    links: MAX_LINK_CHARS - counts.links,
   };
 
   const handleSubmit = async () => {
@@ -95,7 +97,7 @@ export function CastModal({
       requestedFunding === ""
     ) {
       toast({
-        description: "Please fill in all fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -116,6 +118,7 @@ export function CastModal({
         requestedFunding,
         type,
         channel: "gramafund",
+        links,
       });
 
       toast({
@@ -125,6 +128,7 @@ export function CastModal({
       setTitle("");
       setDescription("");
       setDetail("");
+      setLinks("");
       setType("Project");
       handleOpenChange(false);
 
@@ -163,6 +167,9 @@ export function CastModal({
           : "text-muted-foreground",
     );
 
+  const inputStyles =
+    "w-full bg-gray-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:bg-gray-100";
+
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -173,7 +180,7 @@ export function CastModal({
           <Plus className="h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-32px)] p-4 md:p-6 max-w-[600px] top-[50%] rounded-xl">
+      <DialogContent className="w-[calc(100%-32px)] max-w-[600px] h-[80vh] max-h-[80vh] p-4 md:p-6 top-[50%] rounded-xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold md:text-xl">
             New Post
@@ -195,8 +202,11 @@ export function CastModal({
             {/* Title Section */}
             <div className="space-y-1">
               <label className="text-sm font-medium">Title</label>
-              <Textarea
-                placeholder="Title"
+              <p className="text-xs text-muted-foreground">
+                Name of the organization or project
+              </p>
+              <input
+                type="text"
                 value={title}
                 onChange={(e) => {
                   if (e.target.value.length <= MAX_TITLE_CHARS) {
@@ -204,7 +214,7 @@ export function CastModal({
                   }
                 }}
                 maxLength={MAX_TITLE_CHARS}
-                className="resize-none px-3 py-2"
+                className={inputStyles}
               />
               <div className="flex justify-end">
                 <span
@@ -218,11 +228,44 @@ export function CastModal({
               </div>
             </div>
 
+            {/* Requested Funding Section */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium">
+                Requested Funding ($)
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Enter amount in dollars
+              </p>
+              <input
+                type="number"
+                value={requestedFunding}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (isNaN(value) || value <= 0) {
+                    setFundingError("Requested funding must be greater than 0");
+                  } else {
+                    setFundingError("");
+                  }
+                  setRequestedFunding(e.target.value === "" ? "" : value);
+                }}
+                className={inputStyles}
+              />
+              {fundingError && (
+                <div className="text-red-600 text-xs">{fundingError}</div>
+              )}
+            </div>
+
             {/* Description Section */}
             <div className="space-y-1">
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                placeholder="Write a brief description"
+              <label className="text-sm font-medium">
+                What does your project do?
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Please describe, in 1-3 sentences, your (or organization&apos;s)
+                plan to defensively accelerate technology, via actions you will
+                take over the next few years.
+              </p>
+              <textarea
                 value={description}
                 onChange={(e) => {
                   if (e.target.value.length <= MAX_DESCRIPTION_CHARS) {
@@ -230,7 +273,7 @@ export function CastModal({
                   }
                 }}
                 maxLength={MAX_DESCRIPTION_CHARS}
-                className="min-h-[80px] resize-none"
+                className={cn(inputStyles, "h-24 resize-none")}
               />
               <div className="flex justify-end">
                 <span
@@ -246,9 +289,16 @@ export function CastModal({
 
             {/* Detail Section */}
             <div className="space-y-1">
-              <label className="text-sm font-medium">Details</label>
-              <Textarea
-                placeholder="Provide more detailed information"
+              <label className="text-sm font-medium">Spending Plan</label>
+              <p className="text-xs text-muted-foreground">
+                Include mention of how your requested funding and resulting
+                activities fit into that plan including timelines. Your project
+                will be evaluated based on how the funding will be used during
+                the timelines you specify. There is a 1000 character limit, but
+                it&apos;s fine to give a very short explanation if you think
+                that will be enough to make sense.
+              </p>
+              <textarea
                 value={detail}
                 onChange={(e) => {
                   if (e.target.value.length <= MAX_DETAIL_CHARS) {
@@ -256,7 +306,7 @@ export function CastModal({
                   }
                 }}
                 maxLength={MAX_DETAIL_CHARS}
-                className="min-h-[150px] resize-none"
+                className={cn(inputStyles, "h-40 resize-none")}
               />
               <div className="flex justify-end">
                 <span
@@ -270,29 +320,35 @@ export function CastModal({
               </div>
             </div>
 
-            {/* Requested Funding Section */}
+            {/* Optional Link */}
             <div className="space-y-1">
               <label className="text-sm font-medium">
-                Requested Funding ($)
+                Links Of Interest (optional)
               </label>
-              <Input
-                type="number"
-                placeholder="Enter amount in dollars"
-                value={requestedFunding}
+              <p className="text-xs text-muted-foreground">
+                Provide any links that may be of interest to potential funders.
+                Separate multiple links with a new line.
+              </p>
+              <textarea
+                value={links}
                 onChange={(e) => {
-                  const value = parseFloat(e.target.value);
-                  if (isNaN(value) || value <= 0) {
-                    setFundingError("Requested funding must be greater than 0");
-                  } else {
-                    setFundingError("");
+                  if (e.target.value.length <= MAX_LINK_CHARS) {
+                    setLinks(e.target.value);
                   }
-                  setRequestedFunding(e.target.value === "" ? "" : value);
                 }}
-                className="px-3 py-2"
+                maxLength={MAX_LINK_CHARS}
+                className={cn(inputStyles, "h-40 resize-none")}
               />
-              {fundingError && (
-                <div className="text-red-600 text-xs">{fundingError}</div>
-              )}
+              <div className="flex justify-end">
+                <span
+                  className={getCharacterCountClass(
+                    remaining.links,
+                    MAX_LINK_CHARS,
+                  )}
+                >
+                  {remaining.links} characters remaining
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between border-t pt-4">
@@ -300,7 +356,7 @@ export function CastModal({
                 value={type}
                 onValueChange={(value) => setType(value as PostType)}
               >
-                <SelectTrigger className="w-[130px] h-8 px-2 text-sm">
+                <SelectTrigger className="w-[130px] h-8 px-2 text-sm bg-background border">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>

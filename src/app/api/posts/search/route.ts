@@ -1,13 +1,5 @@
-// app/api/posts/search/route.ts
 import { NextResponse } from "next/server";
-import { NeynarAPIClient } from "@neynar/nodejs-sdk";
-
-const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
-
-const PARENT_URLS = [
-  "https://gramafund.vercel.app",
-  "https://gramafund.vercel.app/frame"
-];
+import { getApprovedPosts } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
@@ -18,56 +10,35 @@ export async function GET(request: Request) {
       return NextResponse.json({ posts: [] });
     }
 
-    // Fetch posts from the feed
-    const responses = await Promise.all(
-      PARENT_URLS.map(url => 
-        client.fetchFeed({
-          feedType: "filter",
-          filterType: "parent_url",
-          parentUrl: url,
-          limit: 50, // Increased limit for better search coverage
-        })
-      )
-    );
-
-    // Combine and deduplicate posts
-    const allCasts = responses.flatMap(response => response.casts);
-    const uniqueCasts = allCasts.filter((cast, index) => 
-      allCasts.findIndex(c => c.hash === cast.hash) === index
-    );
+    // Fetch approved posts from the database
+    const approvedPosts = await getApprovedPosts();
 
     // Filter and transform posts based on search query
     const searchLower = query.toLowerCase();
-    const posts = uniqueCasts
-      .map(cast => {
-        const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
-        const descriptionMatch = cast.text.match(/\[description\]\s*(.*?)(?=\s*\[|$)/);
-        const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
-
-        if (!titleMatch?.[1] || !descriptionMatch?.[1] || !typeMatch?.[1]) {
-          return null;
-        }
-
-        const title = titleMatch[1].trim();
-        const description = descriptionMatch[1].trim();
-        const type = typeMatch[1].trim();
+    const posts = approvedPosts.rows
+      .map((post) => {
+        const title = post.title.trim();
+        const description = post.description.trim();
+        const type = post.post_type.trim();
 
         // Check if post matches search query
-        if (!title.toLowerCase().includes(searchLower) && 
-            !description.toLowerCase().includes(searchLower)) {
+        if (
+          !title.toLowerCase().includes(searchLower) &&
+          !description.toLowerCase().includes(searchLower)
+        ) {
           return null;
         }
 
         return {
-          id: cast.hash,
+          id: post.post_hash,
           type,
           title,
           description,
-          author: cast.author.display_name || cast.author.username,
-          authorPfp: cast.author.pfp_url || "",
-          date: new Date(cast.timestamp).toISOString().split("T")[0],
-          karma: cast.reactions.likes_count,
-          comments: cast.replies.count,
+          author: post.author_fid, // Assuming author_fid is the display name or username
+          authorPfp: "", // Assuming no profile picture URL in the database
+          date: new Date(post.created_at).toISOString().split("T")[0],
+          karma: 0, // Assuming no karma data in the database
+          comments: 0, // Assuming no comments data in the database
         };
       })
       .filter((post): post is NonNullable<typeof post> => post !== null)
@@ -85,7 +56,7 @@ export async function GET(request: Request) {
     console.error("Error searching posts:", error);
     return NextResponse.json(
       { error: "Failed to search posts" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

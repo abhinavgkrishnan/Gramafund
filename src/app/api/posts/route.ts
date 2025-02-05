@@ -50,18 +50,40 @@ export async function GET(request: Request) {
 
         const posts = await Promise.all(
           filteredCasts.map(async (cast) => {
-            const titleMatch = cast.text.match(/\[title\]\s*(.*?)(?=\s*\[|$)/);
-            const descriptionMatch = cast.text.match(/\[description\]\s*(.*?)(?=\s*\[|$)/);
-            const typeMatch = cast.text.match(/\[type\]\s*(.*?)(?=\s*\[|$)/);
-
-            if (!titleMatch?.[1] || !descriptionMatch?.[1] || !typeMatch?.[1]) {
-              return null;
+            // Extract Gist URL from cast text
+            const gistUrlMatch = cast.text.match(
+              /Details: (https?:\/\/gist\.github\.com\/\S+)/i,
+            );
+            if (!gistUrlMatch) {
+              return null; // Skip casts without a Gist URL
             }
 
-            const validTypes = ["Project", "Comment", "Reaction", "Funding"];
-            const type = typeMatch[1].trim();
-            if (!validTypes.includes(type)) {
-              return null;
+            // Convert Gist HTML URL to raw JSON URL
+            const gistHtmlUrl = gistUrlMatch[1];
+            const gistId = gistHtmlUrl.split("/").pop(); // Extract the Gist ID
+            if (!gistId) {
+              return null; // Skip invalid Gist URLs
+            }
+
+            const gistRawUrl = `https://gist.githubusercontent.com/abhinavgkrishnan/${gistId}/raw/submission.json`;
+
+            // Fetch Gist data
+            const gistResponse = await fetch(gistRawUrl);
+            if (!gistResponse.ok) {
+              console.error("Failed to fetch Gist:", gistResponse.statusText);
+              return null; // Skip if Gist fetch fails
+            }
+
+            const gistData = await gistResponse.json();
+
+            // Validate required fields
+            if (
+              !gistData.title ||
+              !gistData.description ||
+              !gistData.requestedFunding ||
+              !gistData.type
+            ) {
+              return null; // Skip invalid Gist data
             }
 
             // Fetch conversation to count comments excluding curve data
@@ -72,19 +94,25 @@ export async function GET(request: Request) {
             });
 
             const replies = conversation.conversation.cast.direct_replies || [];
-            const curveDataComments = replies.filter(reply => /\[curve-data\]/.test(reply.text));
+            const curveDataComments = replies.filter((reply) =>
+              /\[curve-data\]/.test(reply.text),
+            );
             const regularCommentsCount = cast.replies.count - curveDataComments.length;
 
             return {
               id: cast.hash,
-              type: type as "Project" | "Comment" | "Reaction" | "Funding",
-              title: titleMatch[1].trim(),
-              description: descriptionMatch[1].trim(),
+              type: gistData.type as "Project" | "Comment" | "Reaction" | "Funding",
+              title: gistData.title,
+              description: gistData.description,
+              requestedFunding: gistData.requestedFunding,
               author: cast.author.display_name || cast.author.username,
+              authorPfp: cast.author.pfp_url,
+              authorFid: cast.author.fid,
               date: new Date(cast.timestamp).toISOString().split("T")[0],
               karma: cast.reactions.likes_count,
               comments: regularCommentsCount,
               tags: [],
+              gistUrl: gistHtmlUrl, // Include Gist URL in the response
             };
           }),
         );

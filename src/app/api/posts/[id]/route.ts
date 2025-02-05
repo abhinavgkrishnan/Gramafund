@@ -7,7 +7,7 @@ const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 interface NeynarAuthor {
   fid: number;
   username: string;
-  display_name: string;
+  display_name?: string; // Make display_name optional
   pfp_url: string;
 }
 
@@ -62,22 +62,84 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const [castResponse, conversationResponse] = (await Promise.all([
+    const [castResponse, conversationResponse] = await Promise.all([
       client.lookupCastByHashOrWarpcastUrl({
         identifier: params.id,
         type: "hash",
-      }),
+      }) as Promise<NeynarCastResponse>, // Explicitly type the response
       client.lookupCastConversation({
         identifier: params.id,
         type: "hash",
         replyDepth: 5,
-      }),
-    ])) as [NeynarCastResponse, NeynarConversationResponse];
+      }) as Promise<NeynarConversationResponse>, // Explicitly type the response
+    ]);
 
     const { cast } = castResponse;
+
+    if (!cast) {
+      console.error("Cast not found for ID:", params.id);
+      return NextResponse.json({ error: "Cast not found" }, { status: 404 });
+    }
+
+    console.log("Cast Text:", cast.text);
     const replies = conversationResponse.conversation.cast.direct_replies || [];
 
-    // Separate curve data comments from regular comments
+    // Extract Gist URL from cast text
+    const gistUrlMatch = cast.text.match(
+      /Details: (https?:\/\/gist\.github\.com\/\S+)/i,
+    );
+    if (!gistUrlMatch) {
+      console.error("No Gist URL found in cast text:", cast.text);
+      return NextResponse.json(
+        { error: "No Gist URL found in cast" },
+        { status: 400 },
+      );
+    }
+
+    // Convert Gist HTML URL to raw JSON URL
+    const gistHtmlUrl = gistUrlMatch[1];
+    const gistId = gistHtmlUrl.split("/").pop(); // Extract the Gist ID
+    if (!gistId) {
+      console.error("Invalid Gist URL format:", gistHtmlUrl);
+      return NextResponse.json(
+        { error: "Invalid Gist URL format" },
+        { status: 400 },
+      );
+    }
+
+    const gistRawUrl = `https://gist.githubusercontent.com/abhinavgkrishnan/${gistId}/raw/submission.json`;
+
+    console.log("Extracted Gist URL:", gistHtmlUrl);
+    console.log("Converted Raw URL:", gistRawUrl);
+
+    // Fetch Gist data
+    const gistResponse = await fetch(gistRawUrl);
+    if (!gistResponse.ok) {
+      console.error("Gist fetch failed:", {
+        status: gistResponse.status,
+        statusText: gistResponse.statusText,
+        url: gistRawUrl,
+      });
+      throw new Error(`Failed to fetch Gist: ${gistResponse.statusText}`);
+    }
+
+    const gistData = await gistResponse.json();
+    console.log("Gist data:", gistData);
+
+    // Validate required fields
+    if (
+      !gistData.title ||
+      !gistData.description ||
+      !gistData.requestedFunding
+    ) {
+      console.error("Invalid Gist data structure:", gistData);
+      return NextResponse.json(
+        { error: "Invalid Gist data structure" },
+        { status: 400 },
+      );
+    }
+
+    // Process replies (keep your existing curve data and comment processing)
     const curveSubmissions: CurveData[] = [];
     const regularComments: NeynarCast[] = [];
 
@@ -95,16 +157,7 @@ export async function GET(
       }
     });
 
-    // Update regex to include detail and requestedFunding fields
-    const titleMatch = cast.text.match(/\[title\](.*?)\n/);
-    const descriptionMatch = cast.text.match(/\[description\](.*?)\n/);
-    const detailMatch = cast.text.match(/\[detail\]([\s\S]*?)(?=\[|$)/);
-    const requestedFundingMatch = cast.text.match(
-      /\[requestedFunding\]\s*\$(\d+)/,
-    );
-    const typeMatch = cast.text.match(/\[type\](.*?)$/);
-
-    // Transform regular comments as before
+    // Transform comments (keep your existing transform function)
     const transformComment = (reply: NeynarCast): TransformedComment => ({
       id: reply.hash,
       author: reply.author.display_name || reply.author.username,
@@ -119,19 +172,20 @@ export async function GET(
 
     const comments = regularComments.map(transformComment);
 
+    // Split links by new lines and filter out empty strings
+    const links = gistData.links
+      ? gistData.links.split("\n").filter(Boolean)
+      : [];
+
+    // Build post object with Gist data
     const post = {
       id: cast.hash,
-      type: (typeMatch?.[1]?.trim() || "Project") as
-        | "Project"
-        | "Comment"
-        | "Reaction"
-        | "Funding",
-      title: titleMatch?.[1]?.trim() || "Untitled",
-      description: descriptionMatch?.[1]?.trim() || "",
-      detail: detailMatch?.[1]?.trim() || "",
-      requestedFunding: requestedFundingMatch
-        ? parseInt(requestedFundingMatch[1], 10)
-        : 200000,
+      type: gistData.type || "Project",
+      title: gistData.title,
+      description: gistData.description,
+      detail: gistData.detail || "",
+      requestedFunding: gistData.requestedFunding,
+      links, // Include links as an array
       author: cast.author.display_name || cast.author.username,
       authorPfp: cast.author.pfp_url,
       authorFid: cast.author.fid,
@@ -140,19 +194,28 @@ export async function GET(
       comments: cast.replies.count - curveSubmissions.length,
       tags: [],
       replies: comments,
-      curveSubmissions, // Add curve submissions to the response
+      curveSubmissions,
       // Default curve values if no submissions
       xIntercept: 500,
       yIntercept: 80,
       middlePoint: { x: 100, y: 60 },
       color: "hsl(var(--chart-1))",
+      // Include additional Gist metadata if needed
+      gistUrl: gistHtmlUrl,
+      gistData: {
+        timestamp: gistData.timestamp,
+        // Add other relevant Gist fields
+      },
     };
 
     return NextResponse.json({ post });
   } catch (error) {
     console.error("Error fetching post:", error);
     return NextResponse.json(
-      { error: "Failed to fetch post" },
+      {
+        error: "Failed to fetch post",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 },
     );
   }

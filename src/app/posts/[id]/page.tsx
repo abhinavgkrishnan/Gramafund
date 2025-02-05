@@ -1,6 +1,5 @@
 "use client";
 
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import axios from "axios";
@@ -37,25 +36,34 @@ export default function PostPage({ params }: PageProps) {
   const [commentText, setCommentText] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  // Fetch post data
+  // Fetch post data with retry mechanism
   const {
     data: postData,
     error,
     isLoading,
     mutate: mutatePost,
-  } = useSWR<{ post: Post }>(`/api/posts/${params.id}`, async (url: string) => {
-    const response = await axios.get(url);
-    return response.data;
-  });
+  } = useSWR<{ post: Post }>(
+    `/api/posts/${params.id}`,
+    async (url: string) => {
+      const response = await axios.get(url);
+      return response.data;
+    },
+    {
+      shouldRetryOnError: true,
+      errorRetryCount: 3,
+      errorRetryInterval: 500,
+    },
+  );
+
+  // Ensure postData is defined before accessing its properties
+  const post = postData?.post;
 
   // Create an array of all comment IDs (including nested ones)
-  const commentIds = postData?.post.replies
-    ? getAllCommentIds(postData.post.replies)
-    : [];
+  const commentIds = post?.replies ? getAllCommentIds(post.replies) : [];
 
   // Fetch reaction status for post and comments
   const { data: reactionData, mutate: mutateReactions } = useSWR(
-    user?.fid && postData?.post
+    user?.fid && post
       ? `/api/posts/${params.id}/reactions?viewerFid=${user.fid}${
           commentIds.length ? `&commentIds=${commentIds.join(",")}` : ""
         }`
@@ -113,7 +121,7 @@ export default function PostPage({ params }: PageProps) {
       await axios.post("/api/posts/like", {
         signerUuid: user.signer_uuid,
         hash: params.id,
-        targetAuthorFid: postData?.post.authorFid,
+        targetAuthorFid: post?.authorFid,
       });
 
       toast({
@@ -309,7 +317,7 @@ export default function PostPage({ params }: PageProps) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !postData) {
     return (
       <div className="container max-w-4xl py-8">
         <div>Loading...</div>
@@ -325,11 +333,13 @@ export default function PostPage({ params }: PageProps) {
     );
   }
 
-  if (!postData?.post) {
-    notFound();
+  if (!post) {
+    return (
+      <div className="container max-w-4xl py-8">
+        <div>Post not found</div>
+      </div>
+    );
   }
-
-  const post = postData.post;
 
   return (
     <div className="container max-w-4xl py-8">
@@ -352,6 +362,7 @@ export default function PostPage({ params }: PageProps) {
 
         {/* Description */}
         <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Project Details</h2>
           <p className="text-lg leading-relaxed text-muted-foreground">
             {post.description}
           </p>
@@ -359,10 +370,32 @@ export default function PostPage({ params }: PageProps) {
 
         {/* Details */}
         <div className="space-y-4">
-          <p className="text-lg leading-relaxed whitespace-pre-wrap">
+          <h2 className="text-xl font-semibold">Spending plan</h2>
+          <p className="text-lg leading-relaxed text-muted-foreground">
             {post.detail}
           </p>
         </div>
+
+        {/* Links */}
+        {post.links && post.links.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Links of Interest</h2>
+            <ul className="list-disc list-inside">
+              {post.links.map((link, index) => (
+                <li key={index}>
+                  <a
+                    href={link.startsWith("http") ? link : `https://${link}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {link}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Impact Curve Chart and Form */}
         <div className="space-y-6">

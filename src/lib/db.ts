@@ -14,10 +14,11 @@ export async function createPostApproval(
   postType: string,
   requestedFunding: number,
   authorFid: string,
+  gistUrl: string,
 ) {
   return await sql`
-    INSERT INTO posts_approval (post_hash, title, description, post_type, requested_funding, author_fid)
-    VALUES (${postHash}, ${title}, ${description}, ${postType}, ${requestedFunding}, ${authorFid})
+    INSERT INTO posts_approval (post_hash, title, description, post_type, requested_funding, author_fid, gist_url)
+    VALUES (${postHash}, ${title}, ${description}, ${postType}, ${requestedFunding}, ${authorFid}, ${gistUrl})
     RETURNING *
   `;
 }
