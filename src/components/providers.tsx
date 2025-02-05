@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { MainHeader } from "@/components/main-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import dynamic from "next/dynamic";
+import { SWRConfig } from 'swr';
 
 const WagmiProvider = dynamic(
   () => import("@/components/providers/WagmiProvider"),
@@ -15,12 +16,18 @@ const WagmiProvider = dynamic(
     ssr: false,
   },
 );
+const swrConfig = {
+  provider: () => new Map(),
+  revalidateOnFocus: false,
+  revalidateIfStale: false,
+};
 
 export function Providers({ children }: PropsWithChildren) {
   const router = useRouter();
 
   return (
     <WagmiProvider>
+      <SWRConfig value={swrConfig}>
       <NeynarContextProvider
         settings={{
           clientId: process.env.NEXT_PUBLIC_NEYNAR_CLIENT_ID || "",
@@ -50,6 +57,7 @@ export function Providers({ children }: PropsWithChildren) {
           </div>
         </SidebarProvider>
       </NeynarContextProvider>
+      </SWRConfig>
     </WagmiProvider>
   );
 }

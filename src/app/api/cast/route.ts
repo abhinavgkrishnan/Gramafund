@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Create GitHub Gist
     const gistData = {
-      description: `Gramafund Submission: ${title}`,
+      description: `ANT Protocol Submission: ${title}`,
       public: true,
       files: {
         'submission.json': {

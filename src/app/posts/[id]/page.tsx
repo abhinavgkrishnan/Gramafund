@@ -65,13 +65,15 @@ export default function PostPage({ params }: PageProps) {
       return response.data;
     },
     {
-      shouldRetryOnError: true,
-      errorRetryCount: 3,
-      errorRetryInterval: 500,
+      revalidateOnMount: false,
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      keepPreviousData: true,
+      suspense: false,
     },
   );
+  
 
-  // Ensure postData is defined before accessing its properties
   const post = postData?.post;
 
   // Create an array of all comment IDs (including nested ones)
@@ -89,6 +91,21 @@ export default function PostPage({ params }: PageProps) {
       return response.data;
     },
   );
+
+  // Simplify the loading check
+  const isLoadingPost = isLoading || !postData?.post;
+  if (isLoadingPost) {
+    return <LoadingState />;
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container max-w-4xl py-8">
+        <div>Error loading post</div>
+      </div>
+    );
+  }
 
   const handleLike = async () => {
     if (!user?.signer_uuid) {

@@ -3,6 +3,9 @@
 import { MessageSquare } from 'lucide-react'
 import Link from "next/link"
 import { Post } from "@/types"
+import { useSWRConfig } from 'swr'
+import axios from 'axios'
+import { useCallback } from 'react'
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,7 +15,6 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
 import { cn } from "@/lib/utils"
-
 
 interface PostCardProps {
   post: Post
@@ -42,11 +44,33 @@ function getTimeAgo(date: string) {
 }
 
 export function PostCard({ post }: PostCardProps) {
+  const { mutate } = useSWRConfig()
+
+  const prefetchPost = useCallback(async () => {
+    try {
+      // Pre-populate the cache
+      const response = await axios.get(`/api/posts/${post.id}`)
+      mutate(`/api/posts/${post.id}`, response.data, false)
+    } catch (error) {
+      console.error('Error prefetching post:', error)
+    }
+  }, [post.id, mutate])
+
+  const PostLink = ({ children }: { children: React.ReactNode }) => (
+    <Link
+      href={`/posts/${post.id}`}
+      className="font-medium hover:underline line-clamp-2"
+      onMouseEnter={prefetchPost}
+      onClick={prefetchPost}
+    >
+      {children}
+    </Link>
+  )
+
   return (
     <div className="group rounded-lg px-3 sm:px-4 py-2 hover:bg-accent border-b border-border last:border-b-0">
       {/* Mobile Layout */}
       <div className="flex flex-col gap-2 sm:hidden">
-        {/* Karma and Type */}
         <div className="flex items-center gap-2">
           <span className="font-medium">{post.karma}</span>
           <span
@@ -59,16 +83,10 @@ export function PostCard({ post }: PostCardProps) {
           </span>
         </div>
 
-        {/* Title */}
         <HoverCard openDelay={0} closeDelay={0}>
           <HoverCardTrigger asChild>
             <div>
-              <Link
-                href={`/posts/${post.id}`}
-                className="font-medium hover:underline line-clamp-2"
-              >
-                {post.title}
-              </Link>
+              <PostLink>{post.title}</PostLink>
             </div>
           </HoverCardTrigger>
           <HoverCardContent className="w-80">
@@ -86,7 +104,6 @@ export function PostCard({ post }: PostCardProps) {
           </HoverCardContent>
         </HoverCard>
 
-        {/* Metadata */}
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground truncate max-w-[100px]">
@@ -118,12 +135,7 @@ export function PostCard({ post }: PostCardProps) {
         <HoverCard openDelay={0} closeDelay={0}>
           <HoverCardTrigger asChild>
             <div className="flex-1 min-w-0">
-              <Link
-                href={`/posts/${post.id}`}
-                className="font-medium hover:underline line-clamp-1"
-              >
-                {post.title}
-              </Link>
+              <PostLink>{post.title}</PostLink>
             </div>
           </HoverCardTrigger>
           <HoverCardContent className="w-80">
@@ -153,5 +165,5 @@ export function PostCard({ post }: PostCardProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }
