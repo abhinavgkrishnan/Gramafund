@@ -12,7 +12,7 @@ import { PostHeader } from "@/components/post/PostHeader";
 import { PostEngagement } from "@/components/post/PostEngagement";
 import { CommentForm } from "@/components/comment/CommentForm";
 import { CommentComponent } from "@/components/comment/CommentComponent";
-import ImpactCurveComponent from "@/components/ImpactCurveComponent";
+import ImpactCurveContainer from "@/components/ImpactCurveContainer";
 import type { Comment, Post } from "@/types";
 
 // Helper function to get all comment IDs including nested ones
@@ -59,18 +59,18 @@ export default function PostPage({ params }: PageProps) {
     isLoading,
     mutate: mutatePost,
   } = useSWR<{ post: Post }>(
-    `/api/posts/${params.id}`,
+    params.id ? `/api/posts/${params.id}` : null, // Check if params.id exists
     async (url: string) => {
+      console.log('Fetching:', url);
       const response = await axios.get(url);
+      console.log('Response:', response.data);
       return response.data;
     },
     {
-      revalidateOnMount: false,
-      revalidateOnFocus: false,
-      revalidateIfStale: false,
       keepPreviousData: true,
-      suspense: false,
-    },
+      revalidateOnFocus: false,
+      dedupingInterval: 2000,
+    }
   );
   
 
@@ -417,7 +417,7 @@ export default function PostPage({ params }: PageProps) {
         )}
 
         <div className="space-y-6">
-          <ImpactCurveComponent projectId={post.id} />
+          <ImpactCurveContainer projectId={post.id} />
         </div>
 
         <PostEngagement
