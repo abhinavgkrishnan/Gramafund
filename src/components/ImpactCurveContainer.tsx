@@ -1,10 +1,10 @@
-import React from 'react';
-import useSWR from 'swr';
-import axios from 'axios';
-import { useNeynarContext } from '@neynar/react';
-import ImpactCurveEditor from './ImpactCurveEditor';
-import ImpactCurveViewer from './ImpactCurveViewer';
-import type { Post } from '@/types/index';
+import React from "react";
+import useSWR from "swr";
+import axios from "axios";
+import { useNeynarContext } from "@neynar/react";
+import ImpactCurveEditor from "./ImpactCurveEditor";
+import ImpactCurveViewer from "./ImpactCurveViewer";
+import type { Post } from "@/types/index";
 
 interface ImpactCurveContainerProps {
   projectId: string;
@@ -25,17 +25,16 @@ const ImpactCurveContainer: React.FC<ImpactCurveContainerProps> = ({ projectId }
   const post = postData.post;
   const curveSubmissions = post.curveSubmissions || [];
 
-  // Check directly in the curveSubmissions array - we can derive the user's submission
-  // by checking both regular replies and the existence of curve submissions
-  const hasUserSubmitted = (post.replies?.some(reply => reply.authorFid === user?.fid) || 
-                          curveSubmissions.length > 0) && user?.fid === post.authorFid;
+  // Find user's submission directly from curveSubmissions
+  const userSubmission = curveSubmissions.find(
+    submission => submission.authorFid === user?.fid
+  );
 
-  if (hasUserSubmitted && curveSubmissions.length > 0) {
-    // If user has submitted, show their submission along with all submissions
+  if (userSubmission) {
     return (
       <ImpactCurveViewer 
         post={post}
-        userSubmission={curveSubmissions[0]} // User's submission is the first one
+        userSubmission={userSubmission}
         curveSubmissions={curveSubmissions}
       />
     );

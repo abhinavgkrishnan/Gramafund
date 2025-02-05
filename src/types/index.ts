@@ -31,6 +31,7 @@ export type Post = {
     xIntercept: number;
     yIntercept: number;
     middlePoint: { x: number; y: number };
+    authorFid: number;
   }[];
 };
 

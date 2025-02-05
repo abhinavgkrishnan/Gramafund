@@ -55,6 +55,7 @@ interface CurveData {
   xIntercept: number;
   yIntercept: number;
   middlePoint: { x: number; y: number };
+  authorFid: number;
 }
 
 export async function GET(
@@ -148,7 +149,10 @@ export async function GET(
       if (curveMatch) {
         try {
           const curveData = JSON.parse(curveMatch[1]);
-          curveSubmissions.push(curveData);
+          curveSubmissions.push({
+            ...curveData,
+            authorFid: reply.author.fid,
+          });
         } catch (e) {
           console.error("Failed to parse curve data:", e);
         }
