@@ -117,7 +117,7 @@ export function CastModal({
         detail,
         requestedFunding,
         type,
-        channel: "gramafund",
+        channel: "antprotocol",
         links,
       });
 

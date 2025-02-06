@@ -5,7 +5,7 @@ import { createPostApproval } from "@/lib/db";
 const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
 const CHANNELS = {
-  gramafund: "https://gramafund.vercel.app/frame",
+  antprotocol: "https://antprotocol.vercel.app/frame",
 } as const;
 
 export async function POST(request: NextRequest) {

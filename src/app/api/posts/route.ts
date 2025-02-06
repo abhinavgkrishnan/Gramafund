@@ -6,8 +6,8 @@ import { getApprovedPosts } from "@/lib/db";
 const client = new NeynarAPIClient({ apiKey: process.env.NEYNAR_API_KEY! });
 
 const PARENT_URLS = [
-  "https://gramafund.vercel.app",
-  "https://gramafund.vercel.app/frame",
+  "https://antprotocol.vercel.app",
+  "https://antprotocol.vercel.app/frame",
 ];
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

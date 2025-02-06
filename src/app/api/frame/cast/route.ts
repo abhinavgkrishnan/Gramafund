@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const cast = await neynarClient.publishCast({
       signerUuid: body.signer_uuid,
       text: formattedText,
-      parent: "https://gramafund.vercel.app/frame",
+      parent: "https://antprotocol.vercel.app/frame",
     });
 
     console.log("Cast published:", cast);
