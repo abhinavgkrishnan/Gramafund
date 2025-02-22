@@ -14,6 +14,7 @@ import { CommentForm } from "@/components/comment/CommentForm";
 import { CommentComponent } from "@/components/comment/CommentComponent";
 import ImpactCurveContainer from "@/components/ImpactCurveContainer";
 import type { Comment, Post } from "@/types";
+import LinkDisplay from "@/components/post/LinkDisplay";
 
 // Helper function to get all comment IDs including nested ones
 const getAllCommentIds = (comments: Comment[]): string[] => {
@@ -397,23 +398,7 @@ export default function PostPage({ params }: PageProps) {
         </div>
 
         {post.links && post.links.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Links of Interest</h2>
-            <ul className="list-disc list-inside">
-              {post.links.map((link, index) => (
-                <li key={index}>
-                  <a
-                    href={link.startsWith("http") ? link : `https://${link}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <LinkDisplay links={post.links} />
         )}
 
         <div className="space-y-6">
