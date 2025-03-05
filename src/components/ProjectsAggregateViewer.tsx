@@ -285,7 +285,13 @@ const ProjectsAggregateViewer = () => {
           // Otherwise interpolate
           else if (p1 && p2) {
             const ratio = (x - p1.x) / (p2.x - p1.x);
-            point[curve.id] = p1.y + ratio * (p2.y - p1.y);
+            // Ensure value never goes below 0
+            point[curve.id] = Math.max(0, p1.y + ratio * (p2.y - p1.y));
+            
+            // If x is beyond the project's requested funding, impact should be 0
+            if (!normalizeX && x > curve.requestedFunding) {
+              point[curve.id] = 0;
+            }
           }
         }
       });
@@ -415,30 +421,44 @@ const ProjectsAggregateViewer = () => {
                       angle: -90,
                       position: "left",
                     }}
+                    tickFormatter={(value: number) => Math.round(value).toString()}
+                    allowDataOverflow={true}
+                    scale="linear"
+                    type="number"
                   />
                   <Tooltip 
                     formatter={(value: number, name: string) => {
                       const project = selectedProjectCurves.find(p => p.id === name);
+                      // Ensure impact score is never negative
+                      const impactScore = Math.max(0, value);
                       return [
-                        `${value.toFixed(1)}`, 
+                        `${impactScore.toFixed(1)}`, 
                         project ? project.title : name
                       ];
                     }}
                     labelFormatter={(label: number) => 
                       normalizeX 
                         ? `Funding: ${label.toFixed(0)}%` 
-                        : `Funding: $${label.toLocaleString()}`
+                        : `Funding: ${label.toLocaleString()}`
                     }
                   />
                   <Legend 
                     verticalAlign="bottom"
                     align="center"
+                    layout="horizontal"
+                    iconSize={8}
                     wrapperStyle={{ 
+                      width: '100%',
                       paddingTop: "20px", 
-                      fontSize: "12px", 
-                      bottom: -60,
-                      lineHeight: "16px"
+                      fontSize: "11px", 
+                      bottom: -80,
+                      lineHeight: "14px",
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'center',
+                      marginBottom: '20px'
                     }}
+                    margin={{ top: 20, bottom: 20 }}
                   />
                   
                   {selectedProjectCurves.map((curve) => (
