@@ -24,8 +24,8 @@ const data = {
       icon: Home,
     },
     {
-      name: "Community",
-      url: "#",
+      name: "All Projects",
+      url: "/aggregate",
       icon: Star,
     },
     {
