@@ -254,6 +254,20 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
       }
     }
   };
+  const getYValueAtMiddleX = (project: Project) => {
+    // Generate points along the curve
+    const curvePoints = generateCurvePoints(project, 1000);
+    
+    // Find the point on the curve closest to the middlePoint.x coordinate
+    const closestPoint = curvePoints.reduce((closest, point) => {
+      return Math.abs(point.x - project.middlePoint.x) < Math.abs(closest.x - project.middlePoint.x) 
+        ? point 
+        : closest;
+    }, curvePoints[0]);
+    
+    // Return the actual Y value at that position
+    return Math.round(closestPoint.y * 10) / 10; // Round to 1 decimal place
+  };
 
   return (
     <Card>
@@ -415,8 +429,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
           <div className="space-y-2">
             <Label>Shape of the curve (Y)</Label>
             <p className="text-xs text-muted-foreground">
-              How does the impact change from the first dollar impact to the
-              last dollar impact?
+              How does the impact change from the first dollar impact to the last dollar impact?
             </p>
             <Slider
               value={[newProject.middlePoint.y]}
@@ -434,7 +447,10 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               step={1}
             />
             <p className="text-sm text-muted-foreground">
-              Value: {newProject.middlePoint.y}
+              {/* Show both values for clarity */}
+              {/* Control value: {newProject.middlePoint.y} */}
+              {/* <br /> */}
+              Value: {getYValueAtMiddleX(newProject)}
             </p>
           </div>
         </div>
