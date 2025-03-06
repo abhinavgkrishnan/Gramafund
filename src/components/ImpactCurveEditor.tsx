@@ -97,7 +97,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
     );
   };
 
-  // 1. First, modify the handleMouseMove function
+  //handleMouseMove function
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!activePoint || !initialCoords || !initialValues) return;
@@ -110,7 +110,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
       const yScale = 0.5;
       
       const scaledDeltaX = deltaX * xScale;
-      const scaledDeltaY = -deltaY * yScale; // Invert Y axis
+      const scaledDeltaY = -deltaY * yScale;
   
       setNewProject((prev) => {
         switch (activePoint) {
@@ -146,7 +146,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               Math.min(initialValues.yIntercept + scaledDeltaY, 100)
             );
             
-            // KEY FIX: Ensure middle point Y doesn't exceed Y-intercept
+            //Ensure middle point Y doesn't exceed Y-intercept
             return {
               ...prev,
               yIntercept: newYIntercept,
@@ -166,7 +166,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               ...prev,
               middlePoint: {
                 x: Math.max(0, Math.min(newMiddleX, prev.xIntercept)),
-                // KEY FIX: Ensure middle Y doesn't exceed Y-intercept
+                //Ensure middle Y doesn't exceed Y-intercept
                 y: Math.max(0, Math.min(newMiddleY, prev.yIntercept)),
               },
             };
@@ -179,7 +179,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
     [activePoint, initialCoords, initialValues, post.requestedFunding]
   );
   
-  // 2. Also fix the slider inputs
+  //slider inputs
   <Slider
     value={[newProject.middlePoint.y]}
     onValueChange={([value]) =>
@@ -187,7 +187,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
         ...newProject,
         middlePoint: {
           ...newProject.middlePoint,
-          // KEY FIX: Ensure slider doesn't set Y higher than Y-intercept
+          //Ensure slider doesn't set Y higher than Y-intercept
           y: Math.min(value, newProject.yIntercept),
         },
       })
@@ -326,25 +326,7 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
         </div>
 
         <div className="space-y-4 mt-6">
-          <div className="space-y-2">
-            <Label>Y-intercept</Label>
-            <p className="text-xs text-muted-foreground">
-              How much impact does the first dollar have on this project?
-            </p>
-            <Slider
-              value={[newProject.yIntercept]}
-              onValueChange={([value]) =>
-                setNewProject({ ...newProject, yIntercept: value })
-              }
-              min={0}
-              max={100}
-              step={1}
-            />
-            <p className="text-sm text-muted-foreground">
-              Value: {newProject.yIntercept}
-            </p>
-          </div>
-
+          {/* X-intercept slider */}
           <div className="space-y-2">
             <Label>X-intercept</Label>
             <p className="text-xs text-muted-foreground">
@@ -356,11 +338,10 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
                 setNewProject({
                   ...newProject,
                   xIntercept: value,
+                  // Also update middle point if necessary
                   middlePoint: {
-                    x:
-                      newProject.middlePoint.x === newProject.xIntercept / 2
-                        ? value / 2
-                        : newProject.middlePoint.x,
+                    // If middle X now exceeds the new X-intercept, adjust it proportionally
+                    x: Math.min(newProject.middlePoint.x, value),
                     y: newProject.middlePoint.y,
                   },
                 })
@@ -373,7 +354,37 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               Value: ${newProject.xIntercept.toLocaleString()}
             </p>
           </div>
-
+          
+          {/* Y-intercept slider */}
+          <div className="space-y-2">
+            <Label>Y-intercept</Label>
+            <p className="text-xs text-muted-foreground">
+              How much impact does the first dollar have on this project?
+            </p>
+            <Slider
+              value={[newProject.yIntercept]}
+              onValueChange={([value]) =>
+                setNewProject({
+                  ...newProject,
+                  yIntercept: value,
+                  // Also update middle point if necessary
+                  middlePoint: {
+                    x: newProject.middlePoint.x,
+                    // If middle Y now exceeds the new Y-intercept, adjust it
+                    y: Math.min(newProject.middlePoint.y, value),
+                  },
+                })
+              }
+              min={0}
+              max={100}
+              step={1}
+            />
+            <p className="text-sm text-muted-foreground">
+              Value: {newProject.yIntercept}
+            </p>
+          </div>
+          
+          {/* Shape of curve (X) slider */}
           <div className="space-y-2">
             <Label>Shape of the curve (X)</Label>
             <p className="text-xs text-muted-foreground">
@@ -386,8 +397,8 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
                 setNewProject({
                   ...newProject,
                   middlePoint: {
-                    ...newProject.middlePoint,
-                    x: Math.max(0, Math.min(value, newProject.xIntercept)),
+                    x: Math.min(value, newProject.xIntercept),
+                    y: newProject.middlePoint.y,
                   },
                 })
               }
@@ -399,7 +410,8 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               Value: ${newProject.middlePoint.x.toLocaleString()}
             </p>
           </div>
-
+          
+          {/* Shape of curve (Y) slider */}
           <div className="space-y-2">
             <Label>Shape of the curve (Y)</Label>
             <p className="text-xs text-muted-foreground">
@@ -412,13 +424,11 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
                 setNewProject({
                   ...newProject,
                   middlePoint: {
-                    ...newProject.middlePoint,
-                    // Ensure slider value doesn't exceed Y-intercept
+                    x: newProject.middlePoint.x,
                     y: Math.min(value, newProject.yIntercept),
                   },
                 })
               }
-              // Set max value to the current Y-intercept instead of a fixed 100
               min={0}
               max={newProject.yIntercept}
               step={1}
