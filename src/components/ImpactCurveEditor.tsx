@@ -97,22 +97,25 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
     );
   };
 
+  // 1. First, modify the handleMouseMove function
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!activePoint || !initialCoords || !initialValues) return;
-
+  
       const deltaX = e.clientX - initialCoords.x;
       const deltaY = e.clientY - initialCoords.y;
-
-      const xScale = (post.requestedFunding / window.innerWidth) * 2;
-      const yScale = (100 / window.innerHeight) * 2;
-
-      const scaledDeltaX = Math.round((deltaX * xScale) / 10) * 10;
-      const scaledDeltaY = Math.round(-deltaY * yScale);
-
+      
+      // Simple scaling factors for smooth movement
+      const xScale = post.requestedFunding / 500;
+      const yScale = 0.5;
+      
+      const scaledDeltaX = deltaX * xScale;
+      const scaledDeltaY = -deltaY * yScale; // Invert Y axis
+  
       setNewProject((prev) => {
         switch (activePoint) {
           case "x": {
+            // Basic X-intercept bounds
             const newXIntercept = Math.max(
               0,
               Math.min(
@@ -120,18 +123,13 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
                 post.requestedFunding
               )
             );
-            const wasMiddleMoved = initialCoords.x !== initialValues.middlePoint.x;
-            const newMiddleX = wasMiddleMoved
-              ? Math.max(
-                  0,
-                  Math.min(
-                    initialValues.middlePoint.x + scaledDeltaX / 2,
-                    newXIntercept
-                  )
-                )
-              : (initialValues.middlePoint.x / initialValues.xIntercept) *
-                newXIntercept;
-
+            
+            // Middle X cannot exceed X-intercept
+            const newMiddleX = Math.min(
+              initialValues.middlePoint.x / initialValues.xIntercept * newXIntercept, 
+              newXIntercept
+            );
+            
             return {
               ...prev,
               xIntercept: newXIntercept,
@@ -141,31 +139,38 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
               },
             };
           }
-          case "y":
+          case "y": {
+            // Y-intercept basic bounds
+            const newYIntercept = Math.max(
+              0,
+              Math.min(initialValues.yIntercept + scaledDeltaY, 100)
+            );
+            
+            // KEY FIX: Ensure middle point Y doesn't exceed Y-intercept
             return {
               ...prev,
-              yIntercept: Math.max(
-                0,
-                Math.min(initialValues.yIntercept + scaledDeltaY, 100)
-              ),
+              yIntercept: newYIntercept,
+              middlePoint: {
+                x: prev.middlePoint.x,
+                y: Math.min(prev.middlePoint.y, newYIntercept),
+              },
             };
-          case "middle":
+          }
+          case "middle": {
+            // Calculate potential new middle point values
+            const newMiddleX = initialValues.middlePoint.x + scaledDeltaX;
+            const newMiddleY = initialValues.middlePoint.y + scaledDeltaY;
+            
+            // Apply constraints
             return {
               ...prev,
               middlePoint: {
-                x: Math.max(
-                  0,
-                  Math.min(
-                    initialValues.middlePoint.x + scaledDeltaX,
-                    prev.xIntercept
-                  )
-                ),
-                y: Math.max(
-                  0,
-                  Math.min(initialValues.middlePoint.y + scaledDeltaY, 100)
-                ),
+                x: Math.max(0, Math.min(newMiddleX, prev.xIntercept)),
+                // KEY FIX: Ensure middle Y doesn't exceed Y-intercept
+                y: Math.max(0, Math.min(newMiddleY, prev.yIntercept)),
               },
             };
+          }
           default:
             return prev;
         }
@@ -173,6 +178,24 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
     },
     [activePoint, initialCoords, initialValues, post.requestedFunding]
   );
+  
+  // 2. Also fix the slider inputs
+  <Slider
+    value={[newProject.middlePoint.y]}
+    onValueChange={([value]) =>
+      setNewProject({
+        ...newProject,
+        middlePoint: {
+          ...newProject.middlePoint,
+          // KEY FIX: Ensure slider doesn't set Y higher than Y-intercept
+          y: Math.min(value, newProject.yIntercept),
+        },
+      })
+    }
+    min={0}
+    max={100}
+    step={1}
+  />
 
   const handleMouseUp = useCallback(() => {
     setActivePoint(null);
@@ -390,12 +413,14 @@ const ImpactCurveEditor: React.FC<ImpactCurveEditorProps> = ({ post }) => {
                   ...newProject,
                   middlePoint: {
                     ...newProject.middlePoint,
-                    y: Math.max(0, Math.min(value, 100)),
+                    // Ensure slider value doesn't exceed Y-intercept
+                    y: Math.min(value, newProject.yIntercept),
                   },
                 })
               }
+              // Set max value to the current Y-intercept instead of a fixed 100
               min={0}
-              max={100}
+              max={newProject.yIntercept}
               step={1}
             />
             <p className="text-sm text-muted-foreground">
